@@ -13,7 +13,6 @@
 // 1. STL
 #include <cstddef>
 #include <cstdlib>
-#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <shared_mutex>
