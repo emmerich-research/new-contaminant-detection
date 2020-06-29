@@ -13,6 +13,7 @@ foreach(driver_file ${driver_sources})
     ${Boost_INCLUDE_DIR})
 
   target_link_libraries(${driver_exe} PRIVATE
+    ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
     "${PROJECT_NAMESPACE}::util"
     "${PROJECT_NAMESPACE}::core")
