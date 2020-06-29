@@ -1,0 +1,7 @@
+# Emmerich Contaminats Detection Configurations
+# github.com/rayandrews
+# <raydreww@gmail.com>
+
+[general]
+name                         = "Emmerich Contaminants Detection"
+debug                        = true # will log all debugging things
