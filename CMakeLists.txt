@@ -104,7 +104,7 @@ set(Boost_USE_DEBUG_LIBS         OFF) # ignore debug libs and
 set(Boost_USE_RELEASE_LIBS       ON)  # only find release libs
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME     OFF)
-find_package(Boost 1.71.0 REQUIRED COMPONENTS
+find_package(Boost 1.65.0 REQUIRED COMPONENTS
   system)
 
 add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
