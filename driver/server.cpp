@@ -1,76 +1,45 @@
-#include <cstdio>
+#include <boost/asio.hpp>
 #include <cstdlib>
 #include <iostream>
-#include <memory>
-#include <stdexcept>
-#include <utility>
 
-#include <boost/asio.hpp>
-
-#include <libcore/core.hpp>
-
-using boost::asio::ip::tcp;
-
-class session : public std::enable_shared_from_this<session> {
- public:
-  session(tcp::socket socket) : socket_{std::move(socket)} {}
-
-  void start() { do_read(); }
-
- private:
-  void do_read() {
-    auto self(shared_from_this());
-    socket_.async_read_some(
-        boost::asio::buffer(data_, max_length),
-        [this, self](boost::system::error_code ec, std::size_t length) {
-          if (!ec) {
-            do_write(length);
-          }
-        });
-  }
-
-  void do_write(std::size_t length) {
-    auto self(shared_from_this());
-    boost::asio::async_write(
-        socket_, boost::asio::buffer(data_, length),
-        [this, self](boost::system::error_code ec, std::size_t /*length*/) {
-          if (!ec) {
-            do_read();
-          }
-        });
-  }
-
-  tcp::socket socket_;
-  enum { max_length = 1024 };
-  char data_[max_length];
-};
+using boost::asio::ip::udp;
 
 class server {
  public:
   server(boost::asio::io_context& io_context, unsigned short port)
-      : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)) {
-    do_accept();
+      : socket_(io_context, udp::endpoint(udp::v4(), port)) {
+    do_receive();
   }
 
- private:
-  void do_accept() {
-    acceptor_.async_accept(
-        [this](boost::system::error_code ec, tcp::socket socket) {
-          if (!ec) {
-            std::make_shared<session>(std::move(socket))->start();
+  void do_receive() {
+    socket_.async_receive_from(
+        boost::asio::buffer(data_, max_length), sender_endpoint_,
+        [this](boost::system::error_code ec, std::size_t bytes_recvd) {
+          if (!ec && bytes_recvd > 0) {
+            do_send(bytes_recvd);
+          } else {
+            do_receive();
           }
-
-          do_accept();
         });
   }
 
-  tcp::acceptor acceptor_;
+  void do_send(std::size_t length) {
+    socket_.async_send_to(boost::asio::buffer(data_, length), sender_endpoint_,
+                          [this](boost::system::error_code /*ec*/,
+                                 std::size_t /*bytes_sent*/) { do_receive(); });
+  }
+
+ private:
+  udp::socket   socket_;
+  udp::endpoint sender_endpoint_;
+  enum { max_length = 1024 };
+  char data_[max_length];
 };
 
 int main(int argc, char* argv[]) {
   try {
     if (argc != 2) {
-      std::cerr << "Usage: async_tcp_echo_server <port>\n";
+      std::cerr << "Usage: async_udp_echo_server <port>\n";
       return 1;
     }
 
