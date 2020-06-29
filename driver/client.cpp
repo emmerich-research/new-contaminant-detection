@@ -1,18 +1,10 @@
-#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
-#include <memory>
-#include <stdexcept>
-#include <utility>
 
 #include <boost/asio.hpp>
 
 #include <libcore/core.hpp>
-
-#include <boost/asio.hpp>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
 
 using boost::asio::ip::tcp;
 

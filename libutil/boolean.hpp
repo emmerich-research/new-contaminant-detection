@@ -6,7 +6,7 @@
  */
 namespace util {
 template <typename... Args>
-static bool or_(const Args&&... values) {
+bool or_(const Args&&... values) {
   auto loop = [&](auto&& value) {
     if (value) {
       throw true;
@@ -22,7 +22,7 @@ static bool or_(const Args&&... values) {
 }
 
 template <typename... Args>
-static bool and_(const Args&&... values) {
+bool and_(const Args&&... values) {
   auto loop = [&](auto&& value) {
     if (!value) {
       throw false;

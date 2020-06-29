@@ -50,11 +50,10 @@ private:
 class server
 {
 public:
-  server(boost::asio::io_context& io_context, short port)
-    : acceptor_(io_context, tcp::endpoint(tcp::v4(), port))
-  {
-    do_accept();
-  }
+ server(boost::asio::io_context& io_context, unsigned short port)
+     : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)) {
+   do_accept();
+ }
 
 private:
   void do_accept()
@@ -83,7 +82,7 @@ int main(int argc, char* argv[]) {
 
     boost::asio::io_context io_context;
 
-    server s(io_context, std::atoi(argv[1]));
+    server s(io_context, static_cast<unsigned short>(std::atoi(argv[1])));
 
     io_context.run();
   } catch (std::exception& e) {

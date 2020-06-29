@@ -6,6 +6,9 @@
  * @brief Filesystem class definitions
  */
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wweak-vtables"
+
 // #if defined(__cplusplus) && __cplusplus >= 201703L && \
 //     defined(__has_include) && !defined(__APPLE__)
 // #if __has_include(<filesystem>)
@@ -31,5 +34,7 @@ using fstream = ghc::filesystem::fstream;
 }  // namespace fs
 
 // #endif
+
+#pragma GCC diagnostic pop
 
 #endif  // LIB_CORE_FILESYSTEM_HPP_
