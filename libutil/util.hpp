@@ -17,6 +17,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <thread>
+#include <type_traits>
 
 // 2. Vendors
 // 2.1. GHC Filesystem
@@ -28,6 +29,7 @@
 #include "macros.hpp"
 #include "pair.hpp"
 #include "timer.hpp"
+#include "types.hpp"
 
 #pragma GCC diagnostic pop
 

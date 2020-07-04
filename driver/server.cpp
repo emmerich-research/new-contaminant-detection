@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
 
     server s(io_context, static_cast<unsigned short>(std::atoi(argv[1])));
 
-    io_context.run();
+    io_context.run();  // blocking, needs to be multi-threaded
   } catch (std::exception& e) {
     std::cerr << "Exception: " << e.what() << "\n";
   }
