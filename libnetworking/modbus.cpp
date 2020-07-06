@@ -7,21 +7,22 @@
 NAMESPACE_BEGIN
 
 namespace networking {
-// const unsigned int  Modbus::MAX_PDU_LENGTH = 253;
-// const unsigned int  Modbus::MAX_ADU_LENGTH = 260;
-// const unsigned int  Modbus::MAX_MESSAGE_LENGTH = MAX_ADU_LENGTH;
-// const unsigned int  Modbus::MIN_REQ_LENGTH = 12;
-// const std::uint16_t Modbus::MAX_READ_BITS = 0x07D0;
-// const std::uint16_t Modbus::MAX_WRITE_BITS = 0x07B0;
-// const std::uint16_t Modbus::MAX_READ_REGISTERS = 0x007D;
-// const std::uint16_t Modbus::MAX_WRITE_REGISTERS = 0x007B;
-// const std::uint16_t Modbus::MAX_RW_READ_REGISTERS = 0x007D;
-// const std::uint16_t Modbus::MAX_RW_WRITE_REGISTERS = 0x0079;
+const Modbus::Timeout Modbus::MaxTimeout = modbus::time::minutes(1);
 
-Modbus::Modbus(const unsigned int& header_length)
-    : header_length_{header_length}, transaction_id_{0}, slave_id_{0xFF} {
+Modbus::Modbus(const unsigned int&    header_length,
+               const Modbus::Timeout& connect_timeout,
+               const Modbus::Timeout& request_timeout,
+               const Modbus::Timeout& response_timeout)
+    : header_length_{header_length},
+      transaction_id_{0},
+      slave_id_{0xFF},
+      connect_timeout_{connect_timeout},
+      request_timeout_{request_timeout},
+      response_timeout_{response_timeout} {
   DEBUG_ONLY(obj_name_ = "Modbus");
   LOG_DEBUG("Initializing Modbus with header length {}", header_length);
+  response_callback_ = []([[maybe_unused]] const auto& response) {};
+  error_callback_ = []([[maybe_unused]] const auto& error) {};
 }
 
 Modbus::~Modbus() {}
@@ -109,7 +110,7 @@ bool Modbus::check_function(const std::uint8_t& function) {
 }
 
 unsigned int Modbus::calculate_length_from_request(
-    const const std::uint8_t* request) const {
+    const Buffer& request) const {
   const auto offset = header_length();
 
   unsigned int length;
@@ -146,8 +147,43 @@ unsigned int Modbus::calculate_length_from_request(
   return offset + length;
 }
 
-bool Modbus::check_confirmation(const std::uint8_t* request,
-                                const std::uint8_t* response) const {
+unsigned int Modbus::calculate_next_response_length_after(
+    const modbus::phase& phase,
+    const Buffer&        response) const {
+  const modbus::function function =
+      static_cast<modbus::function>(response[header_length()]);
+
+  if (phase == modbus::phase::function) {
+    switch (function) {
+      case modbus::function::write_single_coil:
+      case modbus::function::write_single_register:
+      case modbus::function::write_multiple_coils:
+      case modbus::function::write_multiple_registers:
+        return 4;
+
+      case modbus::function::mask_write_register:
+        return 6;
+
+      default:
+        return 1;
+    }
+  } else {
+    switch (function) {
+      case modbus::function::read_coils:
+      case modbus::function::read_discrete_inputs:
+      case modbus::function::read_holding_registers:
+      case modbus::function::read_input_registers:
+      case modbus::function::read_write_multiple_registers:
+        return response[header_length() + 1];
+
+      default:
+        return 0;
+    }
+  }
+}
+
+bool Modbus::check_confirmation(const Buffer& request,
+                                const Buffer& response) const {
   // check transaction id
   if ((request[0] != response[0]) || (request[1] != response[1])) {
     LOG_INFO("Invalid transaction id, should be 0x{} but got 0x{}",
@@ -166,14 +202,14 @@ bool Modbus::check_confirmation(const std::uint8_t* request,
 }
 
 modbus::exception Modbus::check_exception(
-    const std::uint8_t* request,
-    const std::uint8_t* response,
-    const std::size_t&  response_length) const {
+    const Buffer&      request,
+    const Buffer&      response,
+    const std::size_t& response_length) const {
   const std::uint8_t request_function = request[header_length()];
   const std::uint8_t response_function = response[header_length()];
 
-  const auto check_exception_length = [](const unsigned int&      offset,
-                                         const const std::size_t& res_length) {
+  const auto check_exception_length = [](const unsigned int& offset,
+                                         const std::size_t&  res_length) {
     /** Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 7
      * page 47), Modbus exception will only add 2 bytes (function and exception
      * code)
@@ -197,9 +233,9 @@ modbus::exception Modbus::check_exception(
   return modbus::exception::no_exception;
 }
 
-bool Modbus::check_length(const std::uint8_t* request,
-                          const std::uint8_t* response,
-                          const std::size_t&  response_length) const {
+bool Modbus::check_length(const Buffer&      request,
+                          const Buffer&      response,
+                          const std::size_t& response_length) const {
   massert(response[header_length()] < 0x80,
           "function should be less than 0x80");
   const std::uint8_t function = response[header_length()];
@@ -209,25 +245,26 @@ bool Modbus::check_length(const std::uint8_t* request,
   if (response_length == expected_length) {
     // check if function is valid
     if (check_function(function)) {
-      LOG_INFO("Response function is invalid");
+      LOG_ERROR("Response function is invalid");
       return false;
     }
 
     // check whether response function is same with request function
     if (request[header_length()] != function) {
-      LOG_INFO("Request function is not equal with response function");
+      LOG_ERROR("Request function is not equal with response function");
       return false;
     }
 
     const modbus::function e_function = static_cast<modbus::function>(function);
 
-    std::uint8_t req_num_of_bytes;
-    std::uint8_t res_num_of_bytes;
+    unsigned int req_num_of_bytes;
+    unsigned int res_num_of_bytes;
 
     switch (e_function) {
       case modbus::function::read_coils:
       case modbus::function::read_discrete_inputs: {
-        req_num_of_bytes = (request[offset + 3] << 8) + request[offset + 4];
+        req_num_of_bytes = static_cast<unsigned int>(request[offset + 3] << 8) +
+                           request[offset + 4];
         req_num_of_bytes =
             (req_num_of_bytes / 8) + ((req_num_of_bytes % 8) ? 1 : 0);
         res_num_of_bytes = response[offset + 1];
@@ -236,14 +273,18 @@ bool Modbus::check_length(const std::uint8_t* request,
       case modbus::function::read_write_multiple_registers:
       case modbus::function::read_holding_registers:
       case modbus::function::read_input_registers:
-        req_num_of_bytes = (request[offset + 3] << 8) + request[offset + 4];
+        req_num_of_bytes = static_cast<unsigned int>(request[offset + 3] << 8) +
+                           request[offset + 4];
         res_num_of_bytes = response[offset + 1] / 2;
         break;
 
       case modbus::function::write_multiple_coils:
       case modbus::function::write_multiple_registers:
-        req_num_of_bytes = (request[offset + 3] << 8) + request[offset + 4];
-        res_num_of_bytes = (response[offset + 3] << 8) | response[offset + 4];
+        req_num_of_bytes = static_cast<unsigned int>(request[offset + 3] << 8) +
+                           request[offset + 4];
+        res_num_of_bytes =
+            static_cast<unsigned int>(response[offset + 3] << 8) |
+            response[offset + 4];
         break;
 
       // other than above should be equal
@@ -258,7 +299,7 @@ bool Modbus::check_length(const std::uint8_t* request,
     }
 
     if (req_num_of_bytes != res_num_of_bytes) {
-      LOG_INFO("Quantity of request is not equal with response");
+      LOG_ERROR("Quantity of request is not equal with response");
       return false;
     }
 
@@ -266,29 +307,23 @@ bool Modbus::check_length(const std::uint8_t* request,
     return true;
   }
 
-  LOG_INFO("Expected length from request and response length is mismatch");
+  LOG_ERROR("Expected length from request and response length is mismatch");
   return false;
 }
 
-void Modbus::uint16_to_uint8(std::uint8_t*        buffer,
+void Modbus::uint16_to_uint8(Buffer&              buffer,
                              const std::uint16_t& value,
-                             const std::uint16_t& start_addr) {
+                             const unsigned int&  start_addr) {
   massert(start_addr < MAX_MESSAGE_LENGTH, "sanity");
   buffer[start_addr] = value >> 8;
   buffer[start_addr + 1] = value & 0x00FF;
 }
 
-void Modbus::uint8_to_uint16(const std::uint8_t*  buffer,
-                             std::uint16_t&       value,
-                             const std::uint16_t& start_addr) {
+std::uint16_t Modbus::uint8_to_uint16(const Buffer&       buffer,
+                                      const unsigned int& start_addr) {
   massert(start_addr < MAX_MESSAGE_LENGTH, "sanity");
-  value = (buffer[start_addr] << 8) | buffer[start_addr + 1];
-}
-
-std::uint16_t Modbus::uint8_to_uint16(const std::uint8_t*  buffer,
-                                      const std::uint16_t& start_addr) {
-  massert(start_addr < MAX_MESSAGE_LENGTH, "sanity");
-  return (buffer[start_addr] << 8) | buffer[start_addr + 1];
+  return static_cast<std::uint16_t>(buffer[start_addr] << 8) |
+         buffer[start_addr + 1];
 }
 
 void Modbus::read_bits(const std::uint16_t& address,
@@ -298,16 +333,17 @@ void Modbus::read_bits(const std::uint16_t& address,
     return;
   }
 
-  std::uint8_t req[MIN_REQ_LENGTH];
-  std::uint8_t res[MAX_MESSAGE_LENGTH];
+  LOG_INFO("Read bits with address={} and quantity={}", address, quantity);
 
-  unsigned int req_length =
-      build_request(req, modbus::function::read_coils, address, quantity);
+  Buffer request;
 
-  // int req_ans_size = send_message(req, req_length);
+  unsigned int request_length =
+      build_request(request, modbus::function::read_coils, address, quantity);
 
-  // if (req_ans_size > 0) {
-  // }
+  std::visit(
+      util::overloaded<ResponseCallback, ErrorCallback>{response_callback(),
+                                                        error_callback()},
+      send(request, request_length));
 }
 
 void Modbus::read_input_bits(const std::uint16_t& address,
@@ -334,6 +370,43 @@ void Modbus::write_register(const std::uint16_t& address,
 void Modbus::write_registers(const std::uint16_t& address,
                              const std::uint16_t& quantity,
                              const std::uint16_t* value) {}
+
+void Modbus::error_callback(const Modbus::ErrorCallback& error_cb) {
+  LOG_INFO("Setting Modbus error callback");
+  error_callback_ = error_cb;
+}
+
+void Modbus::response_callback(const Modbus::ResponseCallback& response_cb) {
+  LOG_INFO("Setting Modbus response callback");
+  response_callback_ = response_cb;
+}
+
+void Modbus::callback(const Modbus::ResponseCallback& response_cb,
+                      const Modbus::ErrorCallback&    error_cb) {
+  LOG_INFO("Setting Modbus response and error callback");
+  response_callback(response_cb);
+  error_callback(error_cb);
+}
+
+void Modbus::callback(const Modbus::ErrorCallback&    error_cb,
+                      const Modbus::ResponseCallback& response_cb) {
+  callback(response_cb, error_cb);
+}
+
+void Modbus::connect_timeout(const Modbus::Timeout& timeout) {
+  LOG_INFO("Setting Modbus connect to server timeout");
+  connect_timeout_ = timeout;
+}
+
+void Modbus::request_timeout(const Modbus::Timeout& timeout) {
+  LOG_INFO("Setting Modbus request timeout");
+  request_timeout_ = timeout;
+}
+
+void Modbus::response_timeout(const Modbus::Timeout& timeout) {
+  LOG_INFO("Setting Modbus response timeout");
+  response_timeout_ = timeout;
+}
 }  // namespace networking
 
 NAMESPACE_END

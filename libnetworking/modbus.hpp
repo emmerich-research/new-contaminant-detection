@@ -8,10 +8,14 @@
  */
 
 #include <array>
+#include <chrono>
 #include <cstdint>
+#include <functional>
 #include <variant>
 
 #include <boost/system/error_code.hpp>
+
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 #include <libcore/core.hpp>
 
@@ -89,6 +93,13 @@ enum class exception : std::uint8_t {
   no_exception, /**<< No exception status */
   max_exception /**<< helper for checking modbus::eception value */
 };
+
+enum class phase : std::uint8_t { function, meta };
+
+namespace time {
+using minutes = std::chrono::minutes;
+using seconds = std::chrono::seconds;
+}  // namespace time
 }  // namespace modbus
 
 /**
@@ -104,13 +115,133 @@ enum class exception : std::uint8_t {
 class Modbus : public StackObj {
  public:
   /**
+   * Maximum Protocal Data Unit (PDU) Length
+   *
+   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 4
+   * section 1 page 5)
+   */
+  static constexpr unsigned int MAX_PDU_LENGTH = 253;
+  /**
+   * Maximum Application Data Unit (ADU) Length
+   *
+   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 4
+   * section 1 page 5)
+   */
+  static constexpr unsigned int MAX_ADU_LENGTH = 260;
+  /**
+   * Maximum Message Length
+   *
+   * Should be same with MAX_ADU_LENGTH
+   */
+  static constexpr unsigned int MAX_MESSAGE_LENGTH = MAX_ADU_LENGTH;
+  /**
+   * Minimum Request Length to be sent
+   *
+   * This is to determine buffer size for request
+   *
+   * TCP = 12
+   * RTU = 8
+   *
+   * Choose TCP as the max
+   */
+  static constexpr unsigned int MIN_REQ_LENGTH = 12;
+  /**
+   * Max read bits
+   *
+   * Value: 1 - 2000 (2 bytes, 0x0001 - 0x07D0)
+   *
+   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 6
+   * section 1 page 11)
+   */
+  static constexpr std::uint16_t MAX_READ_BITS = 0x07D0;
+  /**
+   * Max write bits
+   *
+   * Value: 1 - 1968 (2 bytes, 0x0001 - 0x07B0)
+   *
+   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 6
+   * section 11 page 29)
+   */
+  static constexpr std::uint16_t MAX_WRITE_BITS = 0x07B0;
+  /**
+   * Max read registers
+   *
+   * Value: 1 - 125 (2 bytes, 0x0001 - 0x007D)
+   *
+   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 6
+   * section 3 page 15)
+   */
+  static constexpr std::uint16_t MAX_READ_REGISTERS = 0x007D;
+  /**
+   * Max write registers
+   *
+   * Value: 1 - 123 (2 bytes, 0x0001 - 0x007B)
+   *
+   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 6
+   * section 12 page 30)
+   */
+  static constexpr std::uint16_t MAX_WRITE_REGISTERS = 0x007B;
+  /**
+   * Max R/W read registers
+   *
+   * Value: 1 - 125 (2 bytes, 0x0001 - 0x007D)
+   *
+   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 6
+   * section 17 page 38)
+   */
+  static constexpr std::uint16_t MAX_RW_READ_REGISTERS = 0x007D;
+  /**
+   * Max R/W write registers
+   *
+   * Value: 1 - 121 (2 bytes, 0x0001 - 0x0079)
+   *
+   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 6
+   * section 17 page 38)
+   */
+  static constexpr std::uint16_t MAX_RW_WRITE_REGISTERS = 0x0079;
+  /**
+   * Modbus buffer
+   *
+   * Will be max-ed into Modbus::MAX_MESSAGE_LENGTH
+   */
+  typedef std::array<std::uint8_t, Modbus::MAX_MESSAGE_LENGTH> Buffer;
+  /**
+   * Modbus buffer
+   *
+   * Implementing std::variant with two possibilities, "Good" Response or "Bad"
+   * Response which is Exception
+   */
+  typedef std::variant<ModbusResponse, ModbusError> Response;
+  /**
+   * Error callback type
+   */
+  typedef std::function<void(const ModbusError&)> ErrorCallback;
+  /**
+   * Response callback type
+   */
+  typedef std::function<void(const ModbusResponse&)> ResponseCallback;
+  /**
+   * Error type
+   */
+  typedef boost::system::error_code ErrorCode;
+  /**
+   * Timeout type
+   */
+  typedef std::chrono::steady_clock::duration Timeout;
+  /**
+   * Max Timeout
+   */
+  static const Timeout MaxTimeout;
+
+ public:
+  /**
    * Open connection to Modbus server
    */
-  virtual boost::system::error_code connect() = 0;
+  virtual ErrorCode connect() = 0;
   /**
    * Close connection to Modbus server
    */
-  virtual boost::system::error_code close() = 0;
+  virtual ErrorCode close() = 0;
   /**
    * Set slave id of Modbus client instance
    *
@@ -198,6 +329,52 @@ class Modbus : public StackObj {
   virtual void write_registers(const std::uint16_t& address,
                                const std::uint16_t& quantity,
                                const std::uint16_t* value);
+  /**
+   * Set Error callback
+   *
+   * @param error_cb error callback to set
+   */
+  void error_callback(const ErrorCallback& error_cb);
+  /**
+   * Set Response callback
+   *
+   * @param response_cb response callback to set
+   */
+  void response_callback(const ResponseCallback& response_cb);
+  /**
+   * Set callback
+   *
+   * @param response_cb response callback to set
+   * @param error_cb    error callback to set
+   */
+  void callback(const ResponseCallback& response_cb,
+                const ErrorCallback&    error_cb);
+  /**
+   * Set callback
+   *
+   * @param error_cb    error callback to set
+   * @param response_cb response callback to set
+   */
+  void callback(const ErrorCallback&    error_cb,
+                const ResponseCallback& response_cb);
+  /**
+   * Set connect to server timeout
+   *
+   * @param timeout timeout to set
+   */
+  void connect_timeout(const Modbus::Timeout& timeout);
+  /**
+   * Set response timeout
+   *
+   * @param timeout timeout to set
+   */
+  void response_timeout(const Modbus::Timeout& timeout);
+  /**
+   * Set request timeout
+   *
+   * @param timeout timeout to set
+   */
+  void request_timeout(const Modbus::Timeout& timeout);
 
  protected:
   /**
@@ -218,6 +395,30 @@ class Modbus : public StackObj {
    * @return slave id of device
    */
   inline const std::uint8_t& slave_id() const { return slave_id_; }
+  /**
+   * Get connect to server timeout
+   *
+   * @return connect to server timeout
+   */
+  inline const Modbus::Timeout& connect_timeout() const {
+    return connect_timeout_;
+  }
+  /**
+   * Get request timeout
+   *
+   * @return request timeout
+   */
+  inline const Modbus::Timeout& request_timeout() const {
+    return request_timeout_;
+  }
+  /**
+   * Get response timeout
+   *
+   * @return response timeout
+   */
+  inline const Modbus::Timeout& response_timeout() const {
+    return response_timeout_;
+  }
   /**
    * Check quantity of bits/coils or register whether inside domain of [1,
    * max_quantity] or not
@@ -279,7 +480,7 @@ class Modbus : public StackObj {
    *
    * @return length of packet
    */
-  virtual unsigned int build_request(std::uint8_t*           req,
+  virtual unsigned int build_request(Buffer&                 req,
                                      const modbus::function& function,
                                      const std::uint16_t&    address,
                                      const std::uint16_t&    quantity) = 0;
@@ -293,9 +494,7 @@ class Modbus : public StackObj {
    *
    * @return ModbusResponse / ModbusError
    */
-  virtual std::variant<ModbusResponse, ModbusError> send(
-      std::uint8_t*      request,
-      const std::size_t& length) = 0;
+  virtual Response send(Buffer& request, const std::size_t& length) = 0;
   /**
    * Split 16 bit to 8 bit HI/LOW
    *
@@ -304,20 +503,9 @@ class Modbus : public StackObj {
    * @param start_addr start address of buffer that will be splitted. start_addr
    * will be HI and end_addr (start_addr + 1) will be LOW
    */
-  static void uint16_to_uint8(std::uint8_t*        buffer,
+  static void uint16_to_uint8(Buffer&              buffer,
                               const std::uint16_t& value,
-                              const std::uint16_t& start_addr = 0);
-  /**
-   * Combine 8 bit to 16 bit
-   *
-   * @param buffer     buffer to read
-   * @param value      value to write
-   * @param start_addr start address of buffer that will be grouped. start_addr
-   * will be HI and end_addr (start_addr + 1) will be LOW
-   */
-  static void uint8_to_uint16(const std::uint8_t*  buffer,
-                              std::uint16_t&       value,
-                              const std::uint16_t& start_addr = 0);
+                              const unsigned int&  start_addr = 0);
   /**
    * Combine 8 bit to 16 bit
    *
@@ -327,8 +515,8 @@ class Modbus : public StackObj {
    *
    * @return value in 16 bit
    */
-  static std::uint16_t uint8_to_uint16(const std::uint8_t*  buffer,
-                                       const std::uint16_t& start_addr = 0);
+  static std::uint16_t uint8_to_uint16(const Buffer&       buffer,
+                                       const unsigned int& start_addr = 0);
   /**
    * Check confirmation reply from Modbus server
    *
@@ -338,8 +526,7 @@ class Modbus : public StackObj {
    *
    * @return confirmation error or not
    */
-  bool check_confirmation(const std::uint8_t* request,
-                          const std::uint8_t* response) const;
+  bool check_confirmation(const Buffer& request, const Buffer& response) const;
   /**
    * Check confirmation reply from Modbus server
    *
@@ -349,9 +536,9 @@ class Modbus : public StackObj {
    *
    * @return Modbus exception
    */
-  modbus::exception check_exception(const std::uint8_t* request,
-                                    const std::uint8_t* response,
-                                    const std::size_t&  response_length) const;
+  modbus::exception check_exception(const Buffer&      request,
+                                    const Buffer&      response,
+                                    const std::size_t& response_length) const;
   /**
    *  Calculate length computed from request
    *
@@ -361,7 +548,20 @@ class Modbus : public StackObj {
    *
    *  @return length expected from request
    */
-  unsigned int calculate_length_from_request(const std::uint8_t* request) const;
+  unsigned int calculate_length_from_request(const Buffer& request) const;
+  /**
+   *  Calculate next response length after phase
+   *
+   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf for more info
+   *
+   *  @param phase    phase of response
+   *  @param response response buffer
+   *
+   *  @return next length to receive
+   */
+  unsigned int calculate_next_response_length_after(
+      const modbus::phase& phase,
+      const Buffer&        response) const;
   /**
    * Check whether excepted length from request is equal with response length
    *
@@ -371,9 +571,24 @@ class Modbus : public StackObj {
    *
    * @return true if length is not mismatch
    */
-  bool check_length(const std::uint8_t* request,
-                    const std::uint8_t* response,
-                    const std::size_t&  response_length) const;
+  bool check_length(const Buffer&      request,
+                    const Buffer&      response,
+                    const std::size_t& response_length) const;
+
+  /**
+   * Set Error callback
+   *
+   * @return error callback
+   */
+  inline const ErrorCallback& error_callback() const { return error_callback_; }
+  /**
+   * Set Response callback
+   *
+   * @return response callback
+   */
+  inline const ResponseCallback& response_callback() const {
+    return response_callback_;
+  }
 
  protected:
   /**
@@ -381,7 +596,10 @@ class Modbus : public StackObj {
    *
    * @param header_length   header length for specific protocol implementation
    */
-  Modbus(const unsigned int& header_length);
+  Modbus(const unsigned int& header_length,
+         const Timeout&      connect_timeout = MaxTimeout,
+         const Timeout&      request_timeout = MaxTimeout,
+         const Timeout&      response_timeout = MaxTimeout);
   /**
    * Modbus destructor
    *
@@ -390,85 +608,6 @@ class Modbus : public StackObj {
   virtual ~Modbus();
 
  protected:
-  /**
-   * Maximum Protocal Data Unit (PDU) Length
-   *
-   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 4
-   * section 1 page 5)
-   */
-  static constexpr unsigned int MAX_PDU_LENGTH = 253;
-  /**
-   * Maximum Application Data Unit (ADU) Length
-   *
-   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 4
-   * section 1 page 5)
-   */
-  static constexpr unsigned int MAX_ADU_LENGTH = 260;
-  /**
-   * Minimum Request Length to be sent
-   *
-   * This is to determine buffer size for request
-   *
-   * TCP = 12
-   * RTU = 8
-   *
-   * Choose TCP as the max
-   */
-  static constexpr unsigned int MIN_REQ_LENGTH = 12;
-  /**
-   * Max read bits
-   *
-   * Value: 1 - 2000 (2 bytes, 0x0001 - 0x07D0)
-   *
-   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 6
-   * section 1 page 11)
-   */
-  static constexpr std::uint16_t MAX_READ_BITS = 0x07D0;
-  /**
-   * Max write bits
-   *
-   * Value: 1 - 1968 (2 bytes, 0x0001 - 0x07B0)
-   *
-   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 6
-   * section 11 page 29)
-   */
-  static constexpr std::uint16_t MAX_WRITE_BITS = 0x07B0;
-  /**
-   * Max read registers
-   *
-   * Value: 1 - 125 (2 bytes, 0x0001 - 0x007D)
-   *
-   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 6
-   * section 3 page 15)
-   */
-  static constexpr std::uint16_t MAX_READ_REGISTERS = 0x007D;
-  /**
-   * Max write registers
-   *
-   * Value: 1 - 123 (2 bytes, 0x0001 - 0x007B)
-   *
-   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 6
-   * section 12 page 30)
-   */
-  static constexpr std::uint16_t MAX_WRITE_REGISTERS = 0x007B;
-  /**
-   * Max R/W read registers
-   *
-   * Value: 1 - 125 (2 bytes, 0x0001 - 0x007D)
-   *
-   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 6
-   * section 17 page 38)
-   */
-  static constexpr std::uint16_t MAX_RW_READ_REGISTERS = 0x007D;
-  /**
-   * Max R/W write registers
-   *
-   * Value: 1 - 121 (2 bytes, 0x0001 - 0x0079)
-   *
-   * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 6
-   * section 17 page 38)
-   */
-  static constexpr std::uint16_t MAX_RW_WRITE_REGISTERS = 0x0079;
   /**
    * Header Length
    *
@@ -492,31 +631,26 @@ class Modbus : public StackObj {
    * section 4.1.2  page 23)
    */
   std::uint8_t slave_id_;
-
- public:
   /**
-   * Maximum Message Length
-   *
-   * Should be same with MAX_ADU_LENGTH
+   * Error Callback
    */
-  static constexpr unsigned int MAX_MESSAGE_LENGTH = MAX_ADU_LENGTH;
+  ErrorCallback error_callback_;
   /**
-   * Response buffer
+   * Response Callback
    */
-  typedef std::array<std::uint8_t, Modbus::MAX_MESSAGE_LENGTH> Response;
+  ResponseCallback response_callback_;
   /**
-   * Request  buffer
+   * Connect to server timeout
    */
-  template <unsigned int REQUEST_LENGTH>
-  using Request = std::array<std::uint8_t, REQUEST_LENGTH>;
+  Modbus::Timeout connect_timeout_;
   /**
-   * Max size request  buffer
+   * Request  timeout
    */
-  typedef Request<Modbus::MAX_MESSAGE_LENGTH> MaxRequest;
+  Modbus::Timeout request_timeout_;
   /**
-   * Min size request  buffer
+   * Response  timeout
    */
-  typedef Request<Modbus::MIN_REQ_LENGTH> MinRequest;
+  Modbus::Timeout response_timeout_;
 };
 
 /**
@@ -536,8 +670,10 @@ struct ModbusResponse {
   const std::uint8_t slave_id;
   /** Modbus function */
   const modbus::function function;
-  /** Raw message */
-  const std::array<std::uint8_t, Modbus::MAX_MESSAGE_LENGTH> raw_response;
+  /** Raw request */
+  const Modbus::Buffer request;
+  /** Raw response */
+  const Modbus::Buffer response;
 };
 
 /**
@@ -552,7 +688,7 @@ struct ModbusError {
   /** Modbus and internal exception */
   const modbus::exception exception;
   /** Error message */
-  const char* error;
+  const std::string error;
   /** Internal exception */
   const bool internal = false;
 };
