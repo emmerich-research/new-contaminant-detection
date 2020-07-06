@@ -158,6 +158,7 @@ void TCP::send_request(Modbus::Buffer&    request,
   run_task(request_timeout(), ec);
 
   if (ec) {
+    // timeout or another issues
     LOG_ERROR("Failed to send data to server");
   } else {
     LOG_INFO("Successfully send data to server");
@@ -177,55 +178,21 @@ void TCP::get_response(Modbus::Buffer&    response,
   LOG_DEBUG("Getting response from Modbus Server hostname={}, port={}", host(),
             port());
 
+  auto buffer = boost::asio::buffer(response);
+
   while (length_to_receive != 0) {
     boost::asio::async_read(
-        socket(), boost::asio::buffer(response),
+        socket(), boost::asio::buffer(buffer + response_length),
         boost::asio::transfer_exactly(length_to_receive),
         std::bind(&TCP::handle_get_response, this, std::placeholders::_1,
                   std::placeholders::_2, std::ref(response), std::ref(phase),
                   std::ref(response_length), std::ref(length_to_receive),
                   std::ref(ec)));
-    // boost::asio::async_read(
-    //     socket(), boost::asio::buffer(response),
-    //     boost::asio::transfer_exactly(length_to_receive),
-    //     [&](const Modbus::ErrorCode& error_code,
-    //         std::size_t              bytes_transferred) {
-    //       response_length += bytes_transferred;
-
-    //       switch (phase) {
-    //         case modbus::phase::function:
-    //           length_to_receive =
-    //               calculate_next_response_length_after(phase, response);
-    //           phase = modbus::phase::meta;
-    //           break;
-
-    //         case modbus::phase::meta:
-    //           length_to_receive =
-    //               calculate_next_response_length_after(phase, response);
-    //           if (response_length > Modbus::MAX_MESSAGE_LENGTH) {
-    //             LOG_ERROR(
-    //                 "Response data size is bad, more than maximum Modbus
-    //                 specs "
-    //                 "{}",
-    //                 Modbus::MAX_MESSAGE_LENGTH);
-    //             return;
-    //           }
-    //           break;
-    //       }
-
-    //       DEBUG_ONLY({
-    //         LOG_DEBUG("Next will receive={}B, Received={}B, Total={}B",
-    //                   length_to_receive, bytes_transferred, response_length);
-    //         std::vector<std::uint8_t> vec;
-    //         std::copy(response.begin(), response.begin() + response_length,
-    //                   std::back_inserter(vec));
-    //         LOG_DEBUG("Current Buffer={}", vec);
-    //       })
-    //     });
 
     run_task(response_timeout(), ec);
 
     if (ec) {
+      // timeout or another issues
       LOG_ERROR("Failed to get full response!");
       return;
     }
@@ -242,31 +209,43 @@ void TCP::handle_get_response(const Modbus::ErrorCode& error_code,
                               std::size_t&             length_to_receive,
                               Modbus::ErrorCode&       ec) {
   if (error_code) {
+    // failed to get response
     ec = error_code;
     return;
   }
 
   LOG_DEBUG(
-      "Bytes transferred={}, Phase={} Res Length={} Length to Receive={} ec={}",
+      "Bytes transferred={}B, Phase={}, Res Length={}B, Length to Receive={}B, "
+      "ec={}",
       bytes_transferred, phase, response_length, length_to_receive, ec.value());
+  length_to_receive -= bytes_transferred;
   response_length += bytes_transferred;
 
-  switch (phase) {
-    case modbus::phase::function:
-      length_to_receive = calculate_next_response_length_after(phase, response);
-      phase = modbus::phase::meta;
-      break;
+  if (length_to_receive == 0) {
+    switch (phase) {
+      case modbus::phase::function:
+        length_to_receive =
+            calculate_next_response_length_after(phase, response);
+        phase = modbus::phase::meta;
+        break;
 
-    case modbus::phase::meta:
-      length_to_receive = calculate_next_response_length_after(phase, response);
-      if ((response_length + length_to_receive) > Modbus::MAX_MESSAGE_LENGTH) {
-        LOG_ERROR(
-            "Response data size is bad, it is more than maximum Modbus specs "
-            "({}B)",
-            Modbus::MAX_MESSAGE_LENGTH);
-        return;
-      }
-      break;
+      case modbus::phase::meta:
+        length_to_receive =
+            calculate_next_response_length_after(phase, response);
+        if ((response_length + length_to_receive) >
+            Modbus::MAX_MESSAGE_LENGTH) {
+          LOG_ERROR(
+              "Response data size is bad, it is more than maximum Modbus specs "
+              "({}B)",
+              Modbus::MAX_MESSAGE_LENGTH);
+          return;
+        }
+        phase = modbus::phase::data;
+        break;
+
+      default:
+        break;
+    }
   }
 
   DEBUG_ONLY({
@@ -283,7 +262,7 @@ Modbus::Response TCP::send(Modbus::Buffer& request, const std::size_t& length) {
   modbus::exception exception;
   Modbus::ErrorCode ec;
   Modbus::Buffer    response;
-  std::size_t       response_length = 1024;
+  std::size_t       response_length;
 
   // blocking request
   send_request(request, length, ec);
@@ -300,7 +279,7 @@ Modbus::Response TCP::send(Modbus::Buffer& request, const std::size_t& length) {
                        /** internal */ true};
   }
 
-  // response blocking
+  // blocking response
   get_response(response, response_length, ec);
 
   if (ec) {
@@ -341,8 +320,9 @@ Modbus::Response TCP::send(Modbus::Buffer& request, const std::size_t& length) {
     return ModbusError{exception, message};
   }
 
-  // check length of message
-  if (!check_length(request, response, response_length)) {
+  // check length of message and return num of bytes
+  auto res_num_of_bytes = check_length(request, response, response_length);
+  if (!res_num_of_bytes) {
     return ModbusError{modbus::exception::bad_data,
                        Modbus::exception_message(modbus::exception::bad_data),
                        true};
@@ -361,10 +341,14 @@ Modbus::Response TCP::send(Modbus::Buffer& request, const std::size_t& length) {
                         response[6],
                         /** function */
                         static_cast<modbus::function>(response[7]),
+                        /** num of bytes */
+                        res_num_of_bytes.value(),
                         /** raw request */
                         request,
                         /** raw response */
-                        response};
+                        response,
+                        /** data, will be overriden by specific function */
+                        {}};
 }
 
 void TCP::run_task(const Modbus::Timeout& timeout, Modbus::ErrorCode& ec) {

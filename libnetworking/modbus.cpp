@@ -92,6 +92,7 @@ bool Modbus::check_function(const std::uint8_t& function) {
     case util::to_underlying(modbus::function::read_coils):
     case util::to_underlying(modbus::function::read_discrete_inputs):
     case util::to_underlying(modbus::function::read_holding_registers):
+    case util::to_underlying(modbus::function::read_input_registers):
     case util::to_underlying(modbus::function::write_single_coil):
     case util::to_underlying(modbus::function::write_single_register):
     case util::to_underlying(modbus::function::read_exception_status):
@@ -233,9 +234,10 @@ modbus::exception Modbus::check_exception(
   return modbus::exception::no_exception;
 }
 
-bool Modbus::check_length(const Buffer&      request,
-                          const Buffer&      response,
-                          const std::size_t& response_length) const {
+std::optional<unsigned int> Modbus::check_length(
+    const Buffer&      request,
+    const Buffer&      response,
+    const std::size_t& response_length) const {
   massert(response[header_length()] < 0x80,
           "function should be less than 0x80");
   const std::uint8_t function = response[header_length()];
@@ -244,15 +246,15 @@ bool Modbus::check_length(const Buffer&      request,
 
   if (response_length == expected_length) {
     // check if function is valid
-    if (check_function(function)) {
+    if (!check_function(function)) {
       LOG_ERROR("Response function is invalid");
-      return false;
+      return {};
     }
 
     // check whether response function is same with request function
     if (request[header_length()] != function) {
       LOG_ERROR("Request function is not equal with response function");
-      return false;
+      return {};
     }
 
     const modbus::function e_function = static_cast<modbus::function>(function);
@@ -283,8 +285,7 @@ bool Modbus::check_length(const Buffer&      request,
         req_num_of_bytes = static_cast<unsigned int>(request[offset + 3] << 8) +
                            request[offset + 4];
         res_num_of_bytes =
-            static_cast<unsigned int>(response[offset + 3] << 8) |
-            response[offset + 4];
+            static_cast<unsigned int>(uint8_to_uint16(response, offset + 3));
         break;
 
       // other than above should be equal
@@ -300,15 +301,15 @@ bool Modbus::check_length(const Buffer&      request,
 
     if (req_num_of_bytes != res_num_of_bytes) {
       LOG_ERROR("Quantity of request is not equal with response");
-      return false;
+      return {};
     }
 
-    // no error
-    return true;
+    // no error, returning num of bytes
+    return req_num_of_bytes;
   }
 
   LOG_ERROR("Expected length from request and response length is mismatch");
-  return false;
+  return {};
 }
 
 void Modbus::uint16_to_uint8(Buffer&              buffer,
@@ -326,50 +327,285 @@ std::uint16_t Modbus::uint8_to_uint16(const Buffer&       buffer,
          buffer[start_addr + 1];
 }
 
-void Modbus::read_bits(const std::uint16_t& address,
-                       const std::uint16_t& quantity,
-                       std::uint8_t*        buffer) {
-  if (!check_quantity(quantity, MAX_READ_BITS)) {
-    return;
-  }
-
-  LOG_INFO("Read bits with address={} and quantity={}", address, quantity);
-
-  Buffer request;
-
-  unsigned int request_length =
-      build_request(request, modbus::function::read_coils, address, quantity);
-
+void Modbus::send_request(Buffer& request, const std::size_t& request_length) {
   std::visit(
       util::overloaded<ResponseCallback, ErrorCallback>{response_callback(),
                                                         error_callback()},
       send(request, request_length));
 }
 
+void Modbus::process_read_bits(const modbus::function& function,
+                               const std::uint16_t&    address,
+                               const std::uint16_t&    quantity,
+                               Buffer8&                buffer) {
+  massert(check_quantity(quantity, MAX_READ_BITS), "sanity");
+
+  Buffer request;
+
+  unsigned int request_length =
+      build_request(request, function, address, quantity);
+
+  std::visit(
+      util::overloaded{[&](ModbusResponse&& response) {
+                         unsigned int temp;
+                         unsigned int bit;
+                         unsigned int pos = 0;
+                         unsigned int offset = header_length() + 2;
+                         unsigned int offset_end = offset + quantity;
+
+                         response.data = Buffer8{};
+                         auto&& data = std::get<Buffer8>(response.data);
+
+                         for (size_t i = offset; i < offset_end; i++) {
+                           temp = response.response[i];
+
+                           for (bit = 0x01; (bit & 0xff) && (pos < quantity);) {
+                             data[pos++] = (temp & bit) ? 1 : 0;
+                             bit = bit << 1;
+                           }
+                         }
+
+                         buffer = data;
+                         response_callback()(response);
+                       },
+                       [&](ModbusError&& error) { error_callback()(error); }},
+      send(request, request_length));
+}
+void Modbus::read_bits(const std::uint16_t& address,
+                       const std::uint16_t& quantity,
+                       Buffer&              buffer) {
+  if (!check_quantity(quantity, MAX_READ_BITS)) {
+    LOG_ERROR("Too many bits requested");
+    return;
+  }
+
+  LOG_INFO("Read bits with address={} and quantity={}", address, quantity);
+
+  process_read_bits(modbus::function::read_coils, address, quantity, buffer);
+}
+
 void Modbus::read_input_bits(const std::uint16_t& address,
                              const std::uint16_t& quantity,
-                             std::uint8_t*        buffer) {}
+                             Buffer8&             buffer) {
+  if (!check_quantity(quantity, MAX_READ_BITS)) {
+    LOG_ERROR("Too many input bits requested");
+    return;
+  }
+
+  LOG_INFO("Read input bits with address={} and quantity={}", address,
+           quantity);
+
+  process_read_bits(modbus::function::read_discrete_inputs, address, quantity,
+                    buffer);
+}
+
+void Modbus::process_read_registers(const modbus::function& function,
+                                    const std::uint16_t&    address,
+                                    const std::uint16_t&    quantity,
+                                    Buffer16&               buffer) {
+  massert(check_quantity(quantity, MAX_READ_REGISTERS), "sanity");
+
+  Buffer request;
+
+  unsigned int request_length =
+      build_request(request, function, address, quantity);
+
+  std::visit(
+      util::overloaded{[&](ModbusResponse&& response) {
+                         response.data = Buffer16{};
+                         auto&& data = std::get<Buffer16>(response.data);
+
+                         unsigned int offset = header_length();
+
+                         for (size_t i = 0; i < response.num_of_bytes; ++i) {
+                           data[i] = uint8_to_uint16(
+                               response.response,
+                               offset + 2 + static_cast<unsigned int>(i << 1));
+                         }
+
+                         buffer = data;
+                         response_callback()(response);
+                       },
+                       [&](ModbusError&& error) { error_callback()(error); }},
+      send(request, request_length));
+}
 
 void Modbus::read_registers(const std::uint16_t& address,
                             const std::uint16_t& quantity,
-                            std::uint16_t*       buffer) {}
+                            Buffer16&            buffer) {
+  if (!check_quantity(quantity, MAX_READ_REGISTERS)) {
+    LOG_ERROR("Too many registers requested");
+    return;
+  }
+
+  LOG_INFO("Read registers with address={} and quantity={}", address, quantity);
+
+  process_read_registers(modbus::function::read_holding_registers, address,
+                         quantity, buffer);
+}
 
 void Modbus::read_input_registers(const std::uint16_t& address,
                                   const std::uint16_t& quantity,
-                                  std::uint16_t*       buffer) {}
+                                  Buffer16&            buffer) {
+  if (!check_quantity(quantity, MAX_READ_REGISTERS)) {
+    LOG_ERROR("Too many input registers requested");
+    return;
+  }
 
-void Modbus::write_bit(const std::uint16_t& address, const uint8_t& value) {}
+  LOG_INFO("Read input registers with address={} and quantity={}", address,
+           quantity);
+
+  process_read_registers(modbus::function::read_input_registers, address,
+                         quantity, buffer);
+}
+
+void Modbus::process_write_single(const modbus::function& function,
+                                  const std::uint16_t&    address,
+                                  const uint16_t&         value) {
+  Buffer request;
+
+  unsigned int request_length =
+      build_request(request, function, address, value);
+
+  std::visit(util::overloaded{response_callback(), error_callback()},
+             send(request, request_length));
+}
+
+void Modbus::write_bit(const std::uint16_t& address, const bool& value) {
+  LOG_INFO("Write single bit/coil with address={} and value={}", address,
+           value);
+  process_write_single(modbus::function::write_single_coil, address,
+                       value ? 0xFF00 : 0x0);
+}
+
+void Modbus::write_register(const std::uint16_t& address,
+                            const std::uint16_t& value) {
+  LOG_INFO("Write single register with address={} and value={}", address,
+           value);
+  process_write_single(modbus::function::write_single_register, address, value);
+}
 
 void Modbus::write_bits(const std::uint16_t& address,
                         const std::uint16_t& quantity,
-                        const std::uint8_t*  value) {}
+                        const std::uint8_t*  value) {
+  if (!check_quantity(quantity, MAX_WRITE_BITS)) {
+    LOG_ERROR("Too many bits that need to write");
+    return;
+  }
 
-void Modbus::write_register(const std::uint16_t& address,
-                            const std::uint16_t& value) {}
+  Buffer        request;
+  std::uint16_t check = 0;
+  std::uint16_t pos = 0;
+
+  unsigned int request_length = build_request(
+      request, modbus::function::write_multiple_coils, address, quantity);
+
+  // set byte count
+  std::uint8_t byte_count =
+      static_cast<std::uint8_t>((quantity / 8) + ((quantity % 8) ? 1 : 0));
+  request[request_length++] = byte_count;
+
+  for (std::uint8_t i = 0; i < byte_count; ++i) {
+    std::uint16_t bit;
+
+    bit = 0x01;
+    request[request_length] = 0;
+
+    while ((bit & 0xFF) && (check++ < quantity)) {
+      if (value[pos++]) {
+        request[request_length] |= bit;
+      } else {
+        request[request_length] &= ~bit;
+      }
+
+      bit = static_cast<std::uint16_t>(bit << 1);
+    }
+
+    request_length++;
+  }
+
+  send(request, request_length);
+}
 
 void Modbus::write_registers(const std::uint16_t& address,
                              const std::uint16_t& quantity,
-                             const std::uint16_t* value) {}
+                             const std::uint16_t* value) {
+  if (!check_quantity(quantity, MAX_READ_REGISTERS)) {
+    LOG_ERROR("Too many registers that need to write");
+    return;
+  }
+
+  Buffer request;
+
+  unsigned int request_length = build_request(
+      request, modbus::function::write_multiple_registers, address, quantity);
+
+  // set byte count
+  std::uint8_t byte_count = static_cast<std::uint8_t>(quantity * 2);
+  request[request_length++] = byte_count;
+
+  for (std::uint16_t i = 0; i < quantity; ++i) {
+    request[request_length++] = value[i] >> 8;
+    request[request_length++] = value[i] & 0x00FF;
+  }
+
+  send(request, request_length);
+}
+
+void Modbus::mask_write_register(const std::uint16_t& address,
+                                 const std::uint16_t& and_mask,
+                                 const std::uint16_t& or_mask) {
+  Buffer       request;
+  unsigned int request_length =
+      build_request(request, modbus::function::mask_write_register, address, 0);
+
+  request_length -= 2;
+
+  request[request_length++] = and_mask >> 8;
+  request[request_length++] = and_mask & 0x00ff;
+  request[request_length++] = or_mask >> 8;
+  request[request_length++] = or_mask & 0x00ff;
+
+  send(request, request_length);
+}
+
+void Modbus::read_write_registers(const std::uint16_t& write_address,
+                                  const std::uint16_t& write_quantity,
+                                  const std::uint16_t* value,
+                                  const std::uint16_t& read_address,
+                                  const std::uint16_t& read_quantity,
+                                  Buffer16&            buffer) {
+  if (!check_quantity(write_quantity, MAX_RW_WRITE_REGISTERS)) {
+    LOG_ERROR("Too many registers that need to write");
+    return;
+  }
+
+  if (!check_quantity(read_quantity, MAX_RW_READ_REGISTERS)) {
+    LOG_ERROR("Too many input registers requested");
+    return;
+  }
+
+  Buffer       request;
+  std::uint8_t byte_count = static_cast<std::uint8_t>(write_quantity * 2);
+  unsigned int request_length =
+      build_request(request, modbus::function::read_write_multiple_registers,
+                    read_address, read_quantity);
+
+  request[request_length++] = write_address >> 8;
+  request[request_length++] = write_address & 0x00ff;
+  request[request_length++] = write_quantity >> 8;
+  request[request_length++] = write_quantity & 0x00ff;
+  request[request_length++] = byte_count;
+
+  for (std::uint16_t i = 0; i < write_quantity; ++i) {
+    request[request_length++] = value[i] >> 8;
+    request[request_length++] = value[i] & 0x00FF;
+  }
+
+  send(request, request_length);
+
+  // prepare output buffer
+}
 
 void Modbus::error_callback(const Modbus::ErrorCallback& error_cb) {
   LOG_INFO("Setting Modbus error callback");
@@ -384,8 +620,8 @@ void Modbus::response_callback(const Modbus::ResponseCallback& response_cb) {
 void Modbus::callback(const Modbus::ResponseCallback& response_cb,
                       const Modbus::ErrorCallback&    error_cb) {
   LOG_INFO("Setting Modbus response and error callback");
-  response_callback(response_cb);
-  error_callback(error_cb);
+  response_callback_ = response_cb;
+  error_callback_ = error_cb;
 }
 
 void Modbus::callback(const Modbus::ErrorCallback&    error_cb,
@@ -406,6 +642,14 @@ void Modbus::request_timeout(const Modbus::Timeout& timeout) {
 void Modbus::response_timeout(const Modbus::Timeout& timeout) {
   LOG_INFO("Setting Modbus response timeout");
   response_timeout_ = timeout;
+}
+
+bool Modbus::error(const Response&& response) {
+  return std::holds_alternative<ModbusError>(response);
+}
+
+bool Modbus::succeed(const Response&& response) {
+  return std::holds_alternative<ModbusResponse>(response);
 }
 }  // namespace networking
 

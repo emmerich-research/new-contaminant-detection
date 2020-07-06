@@ -31,13 +31,6 @@ namespace modbus {
 /**
  *  \author Ray Andrew
  *  \ingroup Networking
- *  @brief is a strongly typed enum class representing type of message of Modbus
- */
-// enum class message : std::uint8_t { indication, confirmation };
-
-/**
- *  \author Ray Andrew
- *  \ingroup Networking
  *  @brief is a strongly typed enum class representing the function of Modbus
  */
 enum class function : std::uint8_t {
@@ -94,7 +87,7 @@ enum class exception : std::uint8_t {
   max_exception /**<< helper for checking modbus::eception value */
 };
 
-enum class phase : std::uint8_t { function, meta };
+enum class phase : std::uint8_t { function, meta, data };
 
 namespace time {
 using minutes = std::chrono::minutes;
@@ -206,6 +199,18 @@ class Modbus : public StackObj {
    */
   typedef std::array<std::uint8_t, Modbus::MAX_MESSAGE_LENGTH> Buffer;
   /**
+   * Modbus buffer for 8 bit
+   *
+   * Will be max-ed into Modbus::MAX_MESSAGE_LENGTH
+   */
+  typedef Buffer Buffer8;
+  /**
+   * Modbus 16 bit buffer
+   *
+   * Will be max-ed into Modbus::MAX_MESSAGE_LENGTH
+   */
+  typedef std::array<std::uint16_t, Modbus::MAX_MESSAGE_LENGTH> Buffer16;
+  /**
    * Modbus buffer
    *
    * Implementing std::variant with two possibilities, "Good" Response or "Bad"
@@ -257,9 +262,9 @@ class Modbus : public StackObj {
    * @param quantity quantity of bits/coils
    * @param buffer   buffer to write
    */
-  virtual void read_bits(const std::uint16_t& address,
-                         const std::uint16_t& quantity,
-                         std::uint8_t*        buffer);
+  void read_bits(const std::uint16_t& address,
+                 const std::uint16_t& quantity,
+                 Buffer8&             buffer);
   /**
    * Read input table of bits/coils from Modbus remote device
    * Result will be put into the buffer
@@ -268,9 +273,9 @@ class Modbus : public StackObj {
    * @param quantity quantity of bits/coils
    * @param buffer   buffer to write
    */
-  virtual void read_input_bits(const std::uint16_t& address,
-                               const std::uint16_t& quantity,
-                               std::uint8_t*        buffer);
+  void read_input_bits(const std::uint16_t& address,
+                       const std::uint16_t& quantity,
+                       Buffer8&             buffer);
   /**
    * Read holding registers from Modbus remote device
    * Result will be put into the buffer
@@ -279,9 +284,9 @@ class Modbus : public StackObj {
    * @param quantity quantity of bits/coils
    * @param buffer   buffer to write
    */
-  virtual void read_registers(const std::uint16_t& address,
-                              const std::uint16_t& quantity,
-                              std::uint16_t*       buffer);
+  void read_registers(const std::uint16_t& address,
+                      const std::uint16_t& quantity,
+                      Buffer16&            buffer);
   /**
    * Read input registers from Modbus remote device
    * Result will be put into the buffer
@@ -290,45 +295,69 @@ class Modbus : public StackObj {
    * @param quantity quantity of bits/coils
    * @param buffer   buffer to write
    */
-  virtual void read_input_registers(const std::uint16_t& address,
-                                    const std::uint16_t& quantity,
-                                    std::uint16_t*       buffer);
+  void read_input_registers(const std::uint16_t& address,
+                            const std::uint16_t& quantity,
+                            Buffer16&            buffer);
   /**
    * Write single bit/coil to Modbus remote device
    *
-   * @param address  address to read
+   * @param address  address to write
    * @param value    value to write
    */
-  virtual void write_bit(const std::uint16_t& address,
-                         const std::uint8_t&  value);
+  void write_bit(const std::uint16_t& address, const bool& value);
   /**
    * Write single bit/coil to Modbus remote device
    *
-   * @param address  address to read
+   * @param address  address to write
    * @param value    value to write
    */
-  virtual void write_register(const std::uint16_t& address,
-                              const std::uint16_t& value);
+  void write_register(const std::uint16_t& address, const std::uint16_t& value);
   /**
    * Write bits/coils to Modbus remote device
    *
-   * @param address  address to read
+   * @param address  address to write
    * @param quantity quantity of address
    * @param value    value to write
    */
-  virtual void write_bits(const std::uint16_t& address,
-                          const std::uint16_t& quantity,
-                          const std::uint8_t*  value);
+  void write_bits(const std::uint16_t& address,
+                  const std::uint16_t& quantity,
+                  const std::uint8_t*  value);
   /**
    * Write registers to Modbus remote device
    *
-   * @param address  address to read
+   * @param address  address to write
    * @param quantity quantity of address
    * @param value    value to write
    */
-  virtual void write_registers(const std::uint16_t& address,
-                               const std::uint16_t& quantity,
-                               const std::uint16_t* value);
+  void write_registers(const std::uint16_t& address,
+                       const std::uint16_t& quantity,
+                       const std::uint16_t* value);
+  /**
+   * Write registers to Modbus remote device
+   *
+   * @param address  address to write
+   * @param and_mask and mask
+   * @param or_mask  or mask
+   */
+  void mask_write_register(const std::uint16_t& address,
+                           const std::uint16_t& and_mask,
+                           const std::uint16_t& or_mask);
+  /**
+   * Write registers to Modbus remote device
+   *
+   * @param write_address  address to write
+   * @param write_quantity quantity of address to write
+   * @param value          value to write
+   * @param write_address  address to read
+   * @param write_quantity quantity of address to read
+   * @param buffer         buffer to write
+   */
+  void read_write_registers(const std::uint16_t& write_address,
+                            const std::uint16_t& write_quantity,
+                            const std::uint16_t* value,
+                            const std::uint16_t& read_address,
+                            const std::uint16_t& read_quantity,
+                            Buffer16&            buffer);
   /**
    * Set Error callback
    *
@@ -375,6 +404,18 @@ class Modbus : public StackObj {
    * @param timeout timeout to set
    */
   void request_timeout(const Modbus::Timeout& timeout);
+  /**
+   * Check if response is containing ModbusError
+   *
+   * @return true if contains ModbusError
+   */
+  static bool error(const Response&& response);
+  /**
+   * Check if response is not containing ModbusError
+   *
+   * @return false if contains ModbusError
+   */
+  static bool succeed(const Response&& response);
 
  protected:
   /**
@@ -476,7 +517,7 @@ class Modbus : public StackObj {
    * @param req       message to be sent
    * @param function  Modbus function
    * @param address   destination address
-   * @param quantity  quantity of address
+   * @param quantity  quantity of address (can be used as quantity)
    *
    * @return length of packet
    */
@@ -569,11 +610,12 @@ class Modbus : public StackObj {
    * @param response         response that has been received from server
    * @param response_length  response length
    *
-   * @return true if length is not mismatch
+   * @return length if there is no length mismatch
    */
-  bool check_length(const Buffer&      request,
-                    const Buffer&      response,
-                    const std::size_t& response_length) const;
+  std::optional<unsigned int> check_length(
+      const Buffer&      request,
+      const Buffer&      response,
+      const std::size_t& response_length) const;
 
   /**
    * Set Error callback
@@ -589,6 +631,48 @@ class Modbus : public StackObj {
   inline const ResponseCallback& response_callback() const {
     return response_callback_;
   }
+  /**
+   * Process send to callback
+   *
+   * @param request        request buffer
+   * @param request_length request buffer
+   */
+  void send_request(Buffer& request, const std::size_t& request_length);
+  /**
+   * Process bits for read action
+   *
+   * @param function Modbus function
+   * @param address  address to read
+   * @param quantity quantity of bits/coils
+   * @param buffer   buffer to write
+   */
+  void process_read_bits(const modbus::function& function,
+                         const std::uint16_t&    address,
+                         const std::uint16_t&    quantity,
+                         Buffer8&                buffer);
+  /**
+   * Process registers for read action
+   *
+   * @param function Modbus function
+   * @param address  address to read
+   * @param quantity quantity of bits/coils
+   * @param buffer   buffer to write
+   */
+  void process_read_registers(const modbus::function& function,
+                              const std::uint16_t&    address,
+                              const std::uint16_t&    quantity,
+                              Buffer16&               buffer);
+
+  /**
+   * Write to specified register / coil                          
+   *
+   * @param function Modbus function
+   * @param address  address to read
+   * @param value    value to write
+   */
+  void process_write_single(const modbus::function& function,
+                            const std::uint16_t& address,
+                            const uint16_t& value);
 
  protected:
   /**
@@ -670,10 +754,14 @@ struct ModbusResponse {
   const std::uint8_t slave_id;
   /** Modbus function */
   const modbus::function function;
+  /** Num of bytes */
+  unsigned int num_of_bytes;
   /** Raw request */
   const Modbus::Buffer request;
   /** Raw response */
   const Modbus::Buffer response;
+  /** Data */
+  std::variant<std::monostate, Modbus::Buffer8, Modbus::Buffer16> data;
 };
 
 /**

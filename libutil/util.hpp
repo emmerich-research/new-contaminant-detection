@@ -24,6 +24,7 @@
 #include <ghc/filesystem.hpp>
 
 // 3. Local
+#include "array.hpp"
 #include "boolean.hpp"
 #include "filesystem.hpp"
 #include "macros.hpp"

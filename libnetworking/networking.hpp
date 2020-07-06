@@ -17,7 +17,9 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <type_traits>
 #include <variant>
+#include <vector>
 
 // 2. Vendor
 // 2.1. Boost
