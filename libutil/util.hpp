@@ -17,17 +17,20 @@
 #include <cstdlib>
 #include <iostream>
 #include <thread>
+#include <type_traits>
 
 // 2. Vendors
 // 2.1. GHC Filesystem
 #include <ghc/filesystem.hpp>
 
 // 3. Local
+#include "array.hpp"
 #include "boolean.hpp"
 #include "filesystem.hpp"
 #include "macros.hpp"
 #include "pair.hpp"
 #include "timer.hpp"
+#include "types.hpp"
 
 #pragma GCC diagnostic pop
 

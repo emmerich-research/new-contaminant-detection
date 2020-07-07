@@ -25,6 +25,9 @@
 // 2. Vendors
 // 2.1. Spdlog
 #include <spdlog/async.h>
+#ifdef NDEBUG
+#include <spdlog/fmt/bundled/ranges.h>
+#endif
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/sinks/rotating_file_sink.h>

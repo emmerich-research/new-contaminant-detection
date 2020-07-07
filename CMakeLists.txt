@@ -103,7 +103,7 @@ set(Boost_USE_DEBUG_LIBS         OFF) # ignore debug libs and
 set(Boost_USE_RELEASE_LIBS       ON)  # only find release libs
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME     OFF)
-find_package(Boost 1.65.0 REQUIRED COMPONENTS
+find_package(Boost 1.71.0 REQUIRED COMPONENTS
   system)
 
 add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
@@ -111,16 +111,10 @@ add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
 find_package(OpenCV REQUIRED)
 find_package(Threads REQUIRED)
 
-# if (DEFINED ENV{BOOST_LIB_DIR})
-#   # set(Boost_LIBRARY_DIRS ${Boost_LIBRARY_DIRS} $ENV{BOOST_LIB_DIR})
-#   # message(${Boost_LIBRARIES})
-#   message($ENV{BOOST_LIBRARYDIR})
-#   # set(BOOST_LIBRARYDIR $ENV{BOOST_LIB_DIR})
-# endif()
-
 if (Boost_FOUND)
   add_subdirectory(libutil)
   add_subdirectory(libcore)
+  add_subdirectory(libnetworking)
   add_subdirectory(driver)
   add_subdirectory(app)
 endif()

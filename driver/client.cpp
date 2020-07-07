@@ -26,24 +26,23 @@ int main(int argc, char* argv[]) {
     udp::resolver::results_type endpoints =
         resolver.resolve(udp::v4(), argv[1], argv[2]);
 
-    // std::cout << "Enter message: ";
-    // char request[max_length];
-    // std::cin.getline(request, max_length);
-    // size_t request_length = std::strlen(request);
-    // s.send_to(boost::asio::buffer(request, request_length),
-    // *endpoints.begin());
+    std::cout << "Enter message: ";
+    char request[max_length];
+    std::cin.getline(request, max_length);
+    size_t request_length = std::strlen(request);
+    s.send_to(boost::asio::buffer(request, request_length), *endpoints.begin());
 
     char          reply[max_length];
     udp::endpoint sender_endpoint;
-    while (true) {
-      size_t reply_length = s.receive_from(
-          boost::asio::buffer(reply, max_length), sender_endpoint);
-      std::cout << "Reply is: ";
-      std::cout.write(reply, static_cast<long>(reply_length));
-      std::cout << "\n";
+    // while (true) {
+    size_t reply_length =
+        s.receive_from(boost::asio::buffer(reply, max_length), sender_endpoint);
+    std::cout << "Reply is: ";
+    std::cout.write(reply, static_cast<long>(reply_length));
+    std::cout << "\n";
 
-      sleep_for<time_units::millis>(100);
-    }
+    // sleep_for<time_units::millis>(100);
+    // }
   } catch (std::exception& e) {
     std::cerr << "Exception: " << e.what() << "\n";
   }

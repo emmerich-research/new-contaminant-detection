@@ -77,6 +77,7 @@ function(target_set_warnings)
             -fcomment-block-commands=test,retval,file,gmail,n
             -Wno-unsupported-friend
             -Wno-global-constructors
+            -Wno-used-but-marked-unused
             -Wno-exit-time-destructors)
           if(NOT CMAKE_CXX_STANDARD EQUAL 98)
               list(APPEND WarningFlags -Wno-c++98-compat -Wno-c++98-compat-pedantic)

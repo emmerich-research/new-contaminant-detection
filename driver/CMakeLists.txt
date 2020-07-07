@@ -16,7 +16,8 @@ foreach(driver_file ${driver_sources})
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
     "${PROJECT_NAMESPACE}::util"
-    "${PROJECT_NAMESPACE}::core")
+    "${PROJECT_NAMESPACE}::core"
+    "${PROJECT_NAMESPACE}::networking")
 
   target_set_warnings(${driver_exe}
     ENABLE ALL
