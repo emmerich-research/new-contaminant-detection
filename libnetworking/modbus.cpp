@@ -2,6 +2,8 @@
 
 #include "modbus.hpp"
 
+#include <utility>
+
 #include <libutil/util.hpp>
 
 NAMESPACE_BEGIN
@@ -367,7 +369,7 @@ Modbus::Response Modbus::process_read_bits(const modbus::function& function,
     response_callback()(res);
   }
 
-  return response;
+  return std::move(response);
 }
 
 Modbus::Response Modbus::read_bits(const std::uint16_t& address,
@@ -437,7 +439,7 @@ Modbus::Response Modbus::process_read_registers(
     response_callback()(res);
   }
 
-  return response;
+  return std::move(response);
 }
 
 Modbus::Response Modbus::read_registers(const std::uint16_t& address,
@@ -491,7 +493,7 @@ Modbus::Response Modbus::process_write_single(const modbus::function& function,
     response_callback()(get_response(response));
   }
 
-  return response;
+  return std::move(response);
 }
 
 Modbus::Response Modbus::write_bit(const std::uint16_t& address,
@@ -562,7 +564,7 @@ Modbus::Response Modbus::write_bits(const std::uint16_t& address,
     response_callback()(get_response(response));
   }
 
-  return response;
+  return std::move(response);
 }
 
 Modbus::Response Modbus::write_registers(const std::uint16_t& address,
@@ -600,7 +602,7 @@ Modbus::Response Modbus::write_registers(const std::uint16_t& address,
     response_callback()(get_response(response));
   }
 
-  return response;
+  return std::move(response);
 }
 
 Modbus::Response Modbus::mask_write_register(const std::uint16_t& address,
@@ -627,7 +629,7 @@ Modbus::Response Modbus::mask_write_register(const std::uint16_t& address,
     response_callback()(get_response(response));
   }
 
-  return response;
+  return std::move(response);
 }
 
 Modbus::Response Modbus::read_write_registers(
@@ -695,7 +697,7 @@ Modbus::Response Modbus::read_write_registers(
     response_callback()(res);
   }
 
-  return response;
+  return std::move(response);
 }
 
 void Modbus::error_callback(const Modbus::ErrorCallback& error_cb) {

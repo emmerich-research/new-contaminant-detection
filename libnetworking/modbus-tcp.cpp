@@ -234,6 +234,7 @@ void TCP::handle_get_response(const Modbus::ErrorCode& error_code,
             calculate_next_response_length_after(phase, response);
         if ((response_length + length_to_receive) >
             Modbus::MAX_MESSAGE_LENGTH) {
+          ec = boost::asio::error::message_size;
           LOG_ERROR(
               "Response data size is bad, it is more than maximum Modbus specs "
               "({}B)",
