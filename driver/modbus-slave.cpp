@@ -7,18 +7,8 @@
 
 const unsigned int SLAVE_ID = 0x01;
 
-const std::uint16_t UT_BITS_ADDRESS = 0x130;
-// const std::uint16_t UT_BITS_NB = 0x25;
-// const std::uint8_t  UT_BITS_TAB[] = {0xCD, 0x6B, 0xB2, 0x0E, 0x1B};
-
-// const std::uint16_t UT_INPUT_BITS_ADDRESS = 0x1C4;
-// const std::uint16_t UT_INPUT_BITS_NB = 0x16;
-// const std::uint8_t  UT_INPUT_BITS_TAB[] = {0xAC, 0xDB, 0x35};
-
-// const std::uint16_t UT_REGISTERS_ADDRESS = 0x160;
-// const std::uint16_t UT_REGISTERS_NB = 0x3;
-// const std::uint16_t UT_REGISTERS_NB_MAX = 0x20;
-// const std::uint16_t UT_REGISTERS_TAB[] = {0x022B, 0x0001, 0x0064};
+const std::uint16_t BITS_ADDRESS = 0x00;
+const std::uint16_t REGISTER_ADDRESS = 0x00;
 
 int main(int argc, const char* argv[]) {
   USE_NAMESPACE
@@ -47,12 +37,18 @@ int main(int argc, const char* argv[]) {
             [&](auto&& data) {
               using T = std::decay_t<decltype(data)>;
               if constexpr (std::is_same_v<T, networking::Modbus::Buffer8>) {
-                LOG_INFO("Length={}, NB={}, Buffer8 Data={}", response.length,
-                         response.num_of_bytes, data);
+                LOG_INFO("Length={}, NB={}", response.length,
+                         response.num_of_bytes);
+                // LOG_INFO("Length={}, NB={}, Buffer8 Data={}",
+                // response.length,
+                //          response.num_of_bytes, data);
               } else if constexpr (std::is_same_v<
                                        T, networking::Modbus::Buffer16>) {
-                LOG_INFO("Length={}, NB={}, Buffer16 Data={}", response.length,
-                         response.num_of_bytes, data);
+                LOG_INFO("Length={}, NB={}", response.length,
+                         response.num_of_bytes);
+                // LOG_INFO("Length={}, NB={}, Buffer16 Data={}",
+                // response.length,
+                //          response.num_of_bytes, data);
               } else if constexpr (std::is_same_v<T, std::monostate>) {
                 // noop
                 // LOG_INFO("Test");
@@ -85,20 +81,92 @@ int main(int argc, const char* argv[]) {
   networking::Modbus::Buffer8  buffer_8;
   networking::Modbus::Buffer16 buffer_16;
 
-  client->write_bit(UT_BITS_ADDRESS, true);
+  {
+    client->write_bit(BITS_ADDRESS, true);
+    const auto&& read_bits_response =
+        client->read_bits(BITS_ADDRESS, 1, buffer_8);
 
-  // if (networking::Modbus::error(response)) {
-  //   LOG_INFO("");
+    if (networking::Modbus::error(read_bits_response)) {
+      LOG_ERROR("FAILED");
+      return -1;
+    }
+
+    massert(buffer_8[0] == 1, "check");
+  }
+
+  {
+    client->write_register(REGISTER_ADDRESS, 12);
+
+    const auto&& read_registers_response =
+        client->read_registers(REGISTER_ADDRESS, 0x1, buffer_16);
+
+    if (networking::Modbus::error(read_registers_response)) {
+      LOG_ERROR("FAILED");
+      return -1;
+    }
+
+    massert(buffer_16[REGISTER_ADDRESS] == 12, "check");
+  }
+
+  {
+    const std::uint8_t buff[] = {1, 1, 1, 1, 1};
+    client->write_bits(BITS_ADDRESS + 0x10, 5, buff);
+
+    const auto&& read_bits_mult_response =
+        client->read_bits(BITS_ADDRESS + 0x10, 5, buffer_8);
+
+    if (networking::Modbus::error(read_bits_mult_response)) {
+      LOG_ERROR("FAILED");
+      return -1;
+    }
+
+    massert(buffer_8[3] == 1, "check");
+    massert(buffer_8[4] == 1, "check");
+  }
+
+  {
+    const std::uint16_t buff[] = {1, 2, 3, 4, 5};
+    client->write_registers(REGISTER_ADDRESS + 0x10, 5, buff);
+
+    const auto&& read_register_mult_response =
+        client->read_registers(REGISTER_ADDRESS + 0x10, 5, buffer_16);
+
+    if (networking::Modbus::error(read_register_mult_response)) {
+      LOG_ERROR("FAILED");
+      return -1;
+    }
+
+    massert(buffer_16[0] == 1, "check");
+    massert(buffer_16[4] == 5, "check");
+  }
+
+  // {
+  //   const auto&& read_input_bits_response =
+  //       client->read_input_bits(BITS_ADDRESS, 5, buffer_8);
+
+  //   if (networking::Modbus::error(read_input_bits_response)) {
+  //     LOG_ERROR("FAILED");
+  //     return -1;
+  //   }
+
+  //   massert(buffer_8[0] == 0, "check");
+  //   massert(buffer_8[4] == 1, "check");
   // }
 
-  client->read_bits(UT_BITS_ADDRESS, 1, buffer_8);
+  // {
+  // client->read_input_registers(REGISTER_ADDRESS, 5, buffer_16);
 
-  client->read_input_bits(0x1C4, 0x16, buffer_8);
+  // const auto&& read_register_mult_response =
+  //     client->read_input_registers(REGISTER_ADDRESS, 5, buffer_16);
 
-  client->read_registers(0x160, 0x1, buffer_16);
-  client->read_registers(0x160, 0x3, buffer_16);
+  // if (networking::Modbus::error(read_register_mult_response)) {
+  //   LOG_ERROR("FAILED");
+  //   return -1;
+  // }
 
-  client->read_input_registers(0x108, 0x1, buffer_16);
+  // massert(buffer_16[0] == 5, "check");
+  // massert(buffer_16[4] == 1, "check");
+  // }
 
   ec = client->close();
 

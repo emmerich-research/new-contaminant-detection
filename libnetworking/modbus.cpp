@@ -98,6 +98,7 @@ bool Modbus::check_function(const std::uint8_t& function) {
     case util::to_underlying(modbus::function::read_exception_status):
     case util::to_underlying(modbus::function::diagnostics):
     case util::to_underlying(modbus::function::write_multiple_coils):
+    case util::to_underlying(modbus::function::write_multiple_registers):
     case util::to_underlying(modbus::function::read_file_record):
     case util::to_underlying(modbus::function::mask_write_register):
     case util::to_underlying(modbus::function::read_write_multiple_registers):
@@ -520,6 +521,8 @@ Modbus::Response Modbus::write_bits(const std::uint16_t& address,
         /** internal */ true};
   }
 
+  LOG_INFO("Write bits with address={}", address);
+
   Buffer        request;
   std::uint16_t check = 0;
   std::uint16_t pos = 0;
@@ -551,7 +554,15 @@ Modbus::Response Modbus::write_bits(const std::uint16_t& address,
     request_length++;
   }
 
-  send(request, request_length);
+  auto&& response = send(request, request_length);
+
+  if (error(response)) {
+    error_callback()(get_error(response));
+  } else {
+    response_callback()(get_response(response));
+  }
+
+  return response;
 }
 
 Modbus::Response Modbus::write_registers(const std::uint16_t& address,
@@ -564,6 +575,8 @@ Modbus::Response Modbus::write_registers(const std::uint16_t& address,
         Modbus::exception_message(modbus::exception::bad_data_size),
         /** internal */ true};
   }
+
+  LOG_INFO("Write registers with address={}", address);
 
   Buffer request;
 
@@ -593,6 +606,8 @@ Modbus::Response Modbus::write_registers(const std::uint16_t& address,
 Modbus::Response Modbus::mask_write_register(const std::uint16_t& address,
                                              const std::uint16_t& and_mask,
                                              const std::uint16_t& or_mask) {
+  LOG_INFO("Write mask register with address={}", address);
+
   Buffer       request;
   unsigned int request_length =
       build_request(request, modbus::function::mask_write_register, address, 0);
@@ -637,6 +652,11 @@ Modbus::Response Modbus::read_write_registers(
         Modbus::exception_message(modbus::exception::bad_data_size),
         /** internal */ true};
   }
+
+  LOG_INFO(
+      "Read and write register with write_address={}, write_quantity={}, "
+      "read_address={}, read_quantity={}",
+      write_address, write_quantity, read_address, read_quantity);
 
   Buffer       request;
   std::uint8_t byte_count = static_cast<std::uint8_t>(write_quantity * 2);
