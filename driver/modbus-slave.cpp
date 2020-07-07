@@ -86,9 +86,14 @@ int main(int argc, const char* argv[]) {
   networking::Modbus::Buffer16 buffer_16;
 
   client->write_bit(UT_BITS_ADDRESS, true);
-  client->read_bits(UT_BITS_ADDRESS, 1, buffer_8);
 
-  client->read_input_bits(0x1C4, 0x16, buffer_8);
+  // if (networking::Modbus::error(response)) {
+  //   LOG_INFO("");
+  // }
+
+  response = client->read_bits(UT_BITS_ADDRESS, 1, buffer_8);
+
+  response = client->read_input_bits(0x1C4, 0x16, buffer_8);
 
   client->read_registers(0x160, 0x1, buffer_16);
   client->read_registers(0x160, 0x3, buffer_16);

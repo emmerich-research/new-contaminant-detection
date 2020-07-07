@@ -21,8 +21,6 @@ target_include_directories(networking PUBLIC
   "$<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>"
   "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 
-message(${Boost_LIBRARIES})
-
 target_link_libraries(networking PUBLIC
   ${CMAKE_THREAD_LIBS_INIT}
   ${Boost_LIBRARIES}
