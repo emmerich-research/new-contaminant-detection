@@ -100,6 +100,12 @@ using seconds = std::chrono::seconds;
  *        This is a virtual class wrapper that implement Modbus Slave
  * specification
  *
+ * Some of these codes are implemented by Libmodbus
+ * (https://github.com/stephane/libmodbus)
+ *
+ * Modified by Ray Andrew
+ * <raydreww@gmail.com> to use Boost ASIO and pure c++ implementation
+ *
  * Read Modbus_Application_Protocol_Specification_V1_1b3.pdf for more info
  *
  * @author Ray Andrew
@@ -214,7 +220,7 @@ class Modbus : public StackObj {
    * Modbus buffer
    *
    * Implementing std::variant with two possibilities, "Good" Response or "Bad"
-   * Response which is Exception
+   * Response (Exception)
    */
   typedef std::variant<ModbusResponse, ModbusError> Response;
   /**
@@ -261,10 +267,12 @@ class Modbus : public StackObj {
    * @param address  address to read
    * @param quantity quantity of bits/coils
    * @param buffer   buffer to write
+   *
+   * @return Modbus::Response contains Response or Error
    */
-  void read_bits(const std::uint16_t& address,
-                 const std::uint16_t& quantity,
-                 Buffer8&             buffer);
+  Response read_bits(const std::uint16_t& address,
+                     const std::uint16_t& quantity,
+                     Buffer8&             buffer);
   /**
    * Read input table of bits/coils from Modbus remote device
    * Result will be put into the buffer
@@ -272,10 +280,12 @@ class Modbus : public StackObj {
    * @param address  address to read
    * @param quantity quantity of bits/coils
    * @param buffer   buffer to write
+   *
+   * @return Modbus::Response contains Response or Error
    */
-  void read_input_bits(const std::uint16_t& address,
-                       const std::uint16_t& quantity,
-                       Buffer8&             buffer);
+  Response read_input_bits(const std::uint16_t& address,
+                           const std::uint16_t& quantity,
+                           Buffer8&             buffer);
   /**
    * Read holding registers from Modbus remote device
    * Result will be put into the buffer
@@ -283,10 +293,12 @@ class Modbus : public StackObj {
    * @param address  address to read
    * @param quantity quantity of bits/coils
    * @param buffer   buffer to write
+   *
+   * @return Modbus::Response contains Response or Error
    */
-  void read_registers(const std::uint16_t& address,
-                      const std::uint16_t& quantity,
-                      Buffer16&            buffer);
+  Response read_registers(const std::uint16_t& address,
+                          const std::uint16_t& quantity,
+                          Buffer16&            buffer);
   /**
    * Read input registers from Modbus remote device
    * Result will be put into the buffer
@@ -294,54 +306,67 @@ class Modbus : public StackObj {
    * @param address  address to read
    * @param quantity quantity of bits/coils
    * @param buffer   buffer to write
+   *
+   * @return Modbus::Response contains Response or Error
    */
-  void read_input_registers(const std::uint16_t& address,
-                            const std::uint16_t& quantity,
-                            Buffer16&            buffer);
+  Response read_input_registers(const std::uint16_t& address,
+                                const std::uint16_t& quantity,
+                                Buffer16&            buffer);
   /**
    * Write single bit/coil to Modbus remote device
    *
    * @param address  address to write
    * @param value    value to write
+   *
+   * @return Modbus::Response contains Response or Error
    */
-  void write_bit(const std::uint16_t& address, const bool& value);
+  Response write_bit(const std::uint16_t& address, const bool& value);
   /**
    * Write single bit/coil to Modbus remote device
    *
    * @param address  address to write
    * @param value    value to write
+   *
+   * @return Modbus::Response contains Response or Error
    */
-  void write_register(const std::uint16_t& address, const std::uint16_t& value);
+  Response write_register(const std::uint16_t& address,
+                          const std::uint16_t& value);
   /**
    * Write bits/coils to Modbus remote device
    *
    * @param address  address to write
    * @param quantity quantity of address
    * @param value    value to write
+   *
+   * @return Modbus::Response contains Response or Error
    */
-  void write_bits(const std::uint16_t& address,
-                  const std::uint16_t& quantity,
-                  const std::uint8_t*  value);
+  Response write_bits(const std::uint16_t& address,
+                      const std::uint16_t& quantity,
+                      const std::uint8_t*  value);
   /**
    * Write registers to Modbus remote device
    *
    * @param address  address to write
    * @param quantity quantity of address
    * @param value    value to write
+   *
+   * @return Modbus::Response contains Response or Error
    */
-  void write_registers(const std::uint16_t& address,
-                       const std::uint16_t& quantity,
-                       const std::uint16_t* value);
+  Response write_registers(const std::uint16_t& address,
+                           const std::uint16_t& quantity,
+                           const std::uint16_t* value);
   /**
    * Write registers to Modbus remote device
    *
    * @param address  address to write
    * @param and_mask and mask
    * @param or_mask  or mask
+   *
+   * @return Modbus::Response contains Response or Error
    */
-  void mask_write_register(const std::uint16_t& address,
-                           const std::uint16_t& and_mask,
-                           const std::uint16_t& or_mask);
+  Response mask_write_register(const std::uint16_t& address,
+                               const std::uint16_t& and_mask,
+                               const std::uint16_t& or_mask);
   /**
    * Write registers to Modbus remote device
    *
@@ -351,13 +376,15 @@ class Modbus : public StackObj {
    * @param write_address  address to read
    * @param write_quantity quantity of address to read
    * @param buffer         buffer to write
+   *
+   * @return Modbus::Response contains Response or Error
    */
-  void read_write_registers(const std::uint16_t& write_address,
-                            const std::uint16_t& write_quantity,
-                            const std::uint16_t* value,
-                            const std::uint16_t& read_address,
-                            const std::uint16_t& read_quantity,
-                            Buffer16&            buffer);
+  Response read_write_registers(const std::uint16_t& write_address,
+                                const std::uint16_t& write_quantity,
+                                const std::uint16_t* value,
+                                const std::uint16_t& read_address,
+                                const std::uint16_t& read_quantity,
+                                Buffer16&            buffer);
   /**
    * Set Error callback
    *
@@ -409,13 +436,37 @@ class Modbus : public StackObj {
    *
    * @return true if contains ModbusError
    */
-  static bool error(const Response&& response);
+  static bool error(const Response& response);
   /**
    * Check if response is not containing ModbusError
    *
    * @return false if contains ModbusError
    */
-  static bool succeed(const Response&& response);
+  static bool succeed(const Response& response);
+  /**
+   * Get right response from variant
+   *
+   * @return ModbusResponse
+   */
+  static const ModbusResponse& get_response(const Response& response);
+  /**
+   * Get right response from variant
+   *
+   * @return ModbusResponse
+   */
+  static ModbusResponse& get_response(Response& response);
+  /**
+   * Get error from variant
+   *
+   * @return ModbusError
+   */
+  static const ModbusError& get_error(const Response& response);
+  /**
+   * Get error from variant
+   *
+   * @return ModbusError
+   */
+  static ModbusError& get_error(Response& response);
 
  protected:
   /**
@@ -632,24 +683,19 @@ class Modbus : public StackObj {
     return response_callback_;
   }
   /**
-   * Process send to callback
-   *
-   * @param request        request buffer
-   * @param request_length request buffer
-   */
-  void send_request(Buffer& request, const std::size_t& request_length);
-  /**
    * Process bits for read action
    *
    * @param function Modbus function
    * @param address  address to read
    * @param quantity quantity of bits/coils
    * @param buffer   buffer to write
+   *
+   * @return Modbus::Response contains Response or Error
    */
-  void process_read_bits(const modbus::function& function,
-                         const std::uint16_t&    address,
-                         const std::uint16_t&    quantity,
-                         Buffer8&                buffer);
+  Response process_read_bits(const modbus::function& function,
+                             const std::uint16_t&    address,
+                             const std::uint16_t&    quantity,
+                             Buffer8&                buffer);
   /**
    * Process registers for read action
    *
@@ -657,22 +703,26 @@ class Modbus : public StackObj {
    * @param address  address to read
    * @param quantity quantity of bits/coils
    * @param buffer   buffer to write
+   *
+   * @return Modbus::Response contains Response or Error
    */
-  void process_read_registers(const modbus::function& function,
-                              const std::uint16_t&    address,
-                              const std::uint16_t&    quantity,
-                              Buffer16&               buffer);
+  Response process_read_registers(const modbus::function& function,
+                                  const std::uint16_t&    address,
+                                  const std::uint16_t&    quantity,
+                                  Buffer16&               buffer);
 
   /**
-   * Write to specified register / coil                          
+   * Write to specified register / coil
    *
    * @param function Modbus function
    * @param address  address to read
    * @param value    value to write
+   *
+   * @return Modbus::Response contains Response or Error
    */
-  void process_write_single(const modbus::function& function,
-                            const std::uint16_t& address,
-                            const uint16_t& value);
+  Response process_write_single(const modbus::function& function,
+                                const std::uint16_t&    address,
+                                const uint16_t&         value);
 
  protected:
   /**
