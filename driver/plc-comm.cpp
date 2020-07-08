@@ -8,7 +8,7 @@
 const std::uint8_t SLAVE_ID = 0x01;
 
 const std::uint16_t STATUS_ADDRESS = 0;
-const std::uint16_t REQ_BIT_ADDRESS = 289;
+const std::uint16_t REQ_BIT_ADDRESS = 288;
 const std::uint16_t YEAR_ADDRESS = 0;
 const std::uint16_t SECOND_ADDRESS = 6;
 
@@ -97,7 +97,7 @@ int main(int argc, const char* argv[]) {
       return -1;
     }
 
-    LOG_INFO("Capture image: {}", buffer_8[0]);
+    LOG_INFO("Capture image: {}", buffer_8[0] ? "true" : "false");
   }
 
   client->close();
