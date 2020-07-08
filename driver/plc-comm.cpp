@@ -7,9 +7,10 @@
 
 const std::uint8_t SLAVE_ID = 0x01;
 
-const std::uint16_t COIL_ADDRESS = 0000;
-const std::uint16_t YEAR_ADDRESS = 0000;
-const std::uint16_t SECOND_ADDRESS = 0006;
+const std::uint16_t STATUS_ADDRESS = 0;
+const std::uint16_t REQ_BIT_ADDRESS = 289;
+const std::uint16_t YEAR_ADDRESS = 0;
+const std::uint16_t SECOND_ADDRESS = 6;
 
 int main(int argc, const char* argv[]) {
   USE_NAMESPACE
@@ -24,6 +25,7 @@ int main(int argc, const char* argv[]) {
   }
 
   networking::Modbus::ErrorCode ec;
+  networking::Modbus::Buffer8   buffer_8;
   networking::Modbus::Buffer16  buffer_16;
 
   std::shared_ptr<networking::Modbus> client =
@@ -59,7 +61,7 @@ int main(int argc, const char* argv[]) {
   }
 
   {
-    const auto&& write_coil = client->write_bit(COIL_ADDRESS, true);
+    const auto&& write_coil = client->write_bit(STATUS_ADDRESS, true);
 
     if (networking::Modbus::error(write_coil)) {
       client->close();
@@ -74,7 +76,7 @@ int main(int argc, const char* argv[]) {
   sleep_for<time_units::millis>(3000);
 
   {
-    const auto&& write_coil = client->write_bit(COIL_ADDRESS, false);
+    const auto&& write_coil = client->write_bit(STATUS_ADDRESS, false);
 
     if (networking::Modbus::error(write_coil)) {
       client->close();
@@ -83,6 +85,19 @@ int main(int argc, const char* argv[]) {
     }
 
     LOG_INFO("WRITE SUCCEED");
+  }
+
+  {
+    const auto&& read_input =
+        client->read_input_bits(REQ_BIT_ADDRESS, 1, buffer_8);
+
+    if (networking::Modbus::error(read_input)) {
+      client->close();
+      LOG_ERROR("FAILED");
+      return -1;
+    }
+
+    LOG_INFO("Capture image: {}", buffer_8[0]);
   }
 
   client->close();
