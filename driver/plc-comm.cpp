@@ -59,8 +59,22 @@ int main(int argc, const char* argv[]) {
   }
 
   {
-    // read date and time
     const auto&& write_coil = client->write_bit(COIL_ADDRESS, true);
+
+    if (networking::Modbus::error(write_coil)) {
+      client->close();
+      LOG_ERROR("FAILED");
+      return -1;
+    }
+
+    LOG_INFO("WRITE SUCCEED");
+  }
+
+  LOG_INFO("Wait for 3 seconds");
+  sleep_for<time_units::millis>(3000);
+
+  {
+    const auto&& write_coil = client->write_bit(COIL_ADDRESS, false);
 
     if (networking::Modbus::error(write_coil)) {
       client->close();
