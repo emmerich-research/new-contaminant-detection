@@ -7,12 +7,9 @@
 
 const std::uint8_t SLAVE_ID = 0x01;
 
-const std::uint16_t YEAR_ADDRESS = 30001;
-// const std::uint16_t MONTH_ADDRESS = 30002;
-// const std::uint16_t DAY_ADDRESS = 30003;
-// const std::uint16_t HOUR_ADDRESS = 30004;
-// const std::uint16_t MINUTE_ADDRESS = 30005;
-const std::uint16_t SECOND_ADDRESS = 30006;
+const std::uint16_t COIL_ADDRESS = 0000;
+const std::uint16_t YEAR_ADDRESS = 0000;
+const std::uint16_t SECOND_ADDRESS = 0006;
 
 int main(int argc, const char* argv[]) {
   USE_NAMESPACE
@@ -27,8 +24,7 @@ int main(int argc, const char* argv[]) {
   }
 
   networking::Modbus::ErrorCode ec;
-  // networking::Modbus::Buffer8   buffer_8;
-  networking::Modbus::Buffer16 buffer_16;
+  networking::Modbus::Buffer16  buffer_16;
 
   std::shared_ptr<networking::Modbus> client =
       networking::modbus::TCP::create(argv[1], argv[2]);
@@ -41,6 +37,7 @@ int main(int argc, const char* argv[]) {
     ec = client->connect();
 
     if (ec) {
+      client->close();
       LOG_ERROR("Failed to connect to server, exiting...");
       return -1;
     }
@@ -52,12 +49,26 @@ int main(int argc, const char* argv[]) {
         YEAR_ADDRESS, SECOND_ADDRESS - YEAR_ADDRESS, buffer_16);
 
     if (networking::Modbus::error(read_date)) {
+      client->close();
       LOG_ERROR("FAILED");
       return -1;
     }
 
     LOG_INFO("DateTime: {}/{}/{} @ {}:{}:{}", buffer_16[2], buffer_16[1],
              buffer_16[0], buffer_16[3], buffer_16[4], buffer_16[5]);
+  }
+
+  {
+    // read date and time
+    const auto&& write_coil = client->write_bit(COIL_ADDRESS, true);
+
+    if (networking::Modbus::error(write_coil)) {
+      client->close();
+      LOG_ERROR("FAILED");
+      return -1;
+    }
+
+    LOG_INFO("WRITE SUCCEED");
   }
 
   client->close();

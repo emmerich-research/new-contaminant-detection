@@ -129,6 +129,12 @@ unsigned int TCP::build_request(Modbus::Buffer&         req,
   // split into HI/LOW repr
   Modbus::uint16_to_uint8(req, quantity, 10);
 
+  Buffer a = {75, 30};
+
+  LOG_DEBUG("Address {}, HI/LOW={}, HI={}, LOW={}, a={}", address,
+            Modbus::uint8_to_uint16(req, 8), req[8], req[9],
+            Modbus::uint8_to_uint16(a));
+
   return REQ_LENGTH;
 }
 
@@ -317,7 +323,7 @@ Modbus::Response TCP::send(Modbus::Buffer& request, const std::size_t& length) {
 
   if (exception != modbus::exception::no_exception) {
     const char* message = Modbus::exception_message(exception);
-    LOG_ERROR("Got Modbus exception with message {}", message);
+    LOG_ERROR("Got Modbus exception with message: {}", message);
     return ModbusError{exception, message};
   }
 

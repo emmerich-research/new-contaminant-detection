@@ -212,17 +212,12 @@ modbus::exception Modbus::check_exception(
   const std::uint8_t request_function = request[header_length()];
   const std::uint8_t response_function = response[header_length()];
 
-  const auto check_exception_length = [](const unsigned int& offset,
-                                         const std::size_t&  res_length) {
-    /** Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 7
-     * page 47), Modbus exception will only add 2 bytes (function and exception
-     * code)
-     */
-    return res_length == (offset + 2);
-  };
+  /** Read Modbus_Application_Protocol_Specification_V1_1b3.pdf (chapter 7
+   * page 47), Modbus exception will only add 2 bytes (function and exception
+   * code)
+   */
 
-  if (response_function >= 0x80 &&
-      check_exception_length(header_length(), response_length) &&
+  if (response_function >= 0x80 && ((header_length() + 2) == response_length) &&
       (request_function == (response_function - 0x80))) {
     // exception is happening here
     const std::uint8_t exception_code = response[header_length() + 1];
