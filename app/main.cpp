@@ -5,89 +5,85 @@
 #include <stdexcept>
 #include <utility>
 
-#include <boost/asio.hpp>
-
 #include <libcore/core.hpp>
+#include <libdetector/detector.hpp>
+#include <libgui/gui.hpp>
+#include <libnetworking/networking.hpp>
+#include <libutil/util.hpp>
 
-using boost::asio::ip::tcp;
+int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
+  USE_NAMESPACE
 
-class session
-  : public std::enable_shared_from_this<session>
-{
-public:
- session(tcp::socket socket) : socket_{std::move(socket)} {}
-
- void start() { do_read(); }
-
-private:
- void do_read() {
-   auto self(shared_from_this());
-   socket_.async_read_some(
-       boost::asio::buffer(data_, max_length),
-       [this, self](boost::system::error_code ec, std::size_t length) {
-         if (!ec) {
-           do_write(length);
-         }
-       });
- }
-
-  void do_write(std::size_t length) {
-    auto self(shared_from_this());
-    boost::asio::async_write(
-        socket_, boost::asio::buffer(data_, length),
-        [this, self](boost::system::error_code ec, std::size_t /*length*/) {
-          if (!ec) {
-            do_read();
-          }
-        });
+  if (initialize_core()) {
+    return ATM_ERR;
   }
 
-  tcp::socket socket_;
-  enum { max_length = 1024 };
-  char data_[max_length];
-};
+  gui::Manager ui_manager;
 
-class server
-{
-public:
- server(boost::asio::io_context& io_context, unsigned short port)
-     : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)) {
-   do_accept();
- }
+  ui_manager.init("Emmerich Vision", 400, 400);
 
-private:
-  void do_accept()
-  {
-    acceptor_.async_accept(
-        [this](boost::system::error_code ec, tcp::socket socket)
-        {
-          if (!ec)
-          {
-            std::make_shared<session>(std::move(socket))->start();
-          }
-
-          do_accept();
-        });
+  if (!ui_manager.active()) {
+    return ATM_ERR;
   }
 
-  tcp::acceptor acceptor_;
-};
+  cv::VideoCapture cap(0);
+  if (!cap.isOpened()) {
+    std::cout << "camera cannot be opened" << std::endl;
+    return ATM_ERR;
+  }
 
-int main(int argc, char* argv[]) {
-  try {
-    if (argc != 2) {
-      std::cerr << "Usage: async_tcp_echo_server <port>\n";
-      return 1;
+  ui_manager.key_callback([](gui::Manager::MainWindow* current_window, int key,
+                             [[maybe_unused]] int scancode, int action,
+                             int mods) {
+    if (mods == GLFW_MOD_ALT && key == GLFW_KEY_F4 && action == GLFW_PRESS) {
+      glfwSetWindowShouldClose(current_window, GL_TRUE);
+    } else if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+      glfwSetWindowShouldClose(current_window, GL_TRUE);
     }
+  });
 
-    boost::asio::io_context io_context;
+  ImGuiWindowFlags window_flags = 0;
+  // window_flags |= ImGuiWindowFlags_NoTitleBar;
+  // window_flags |= ImGuiWindowFlags_NoScrollbar;
+  // window_flags |= ImGuiWindowFlags_NoMove;
+  // window_flags |= ImGuiWindowFlags_NoResize;
+  window_flags |= ImGuiWindowFlags_NoCollapse;
+  // window_flags |= ImGuiWindowFlags_NoNav;
+  window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+  window_flags |= ImGuiWindowFlags_AlwaysAutoResize;
 
-    server s(io_context, static_cast<unsigned short>(std::atoi(argv[1])));
+  detector::BlobDetector blob_detector;
 
-    io_context.run();
-  } catch (std::exception& e) {
-    std::cerr << "Exception: " << e.what() << "\n";
+  // create windows
+  gui::ImageWindow* image_window = new gui::ImageWindow("image", 300, 300);
+  gui::ImageWindow* blob_window =
+      new gui::ImageWindow("blob-detection", 300, 300);
+
+  // add window
+  ui_manager.add_window(image_window);
+  ui_manager.add_window(blob_window);
+
+  while (ui_manager.handle_events()) {
+    cv::Mat frame, blob;
+    if (cap.read(frame)) {
+      // make halfsize image
+      // cv::resize(frame, frame, cv::Size{0, 0}, 0.5, 0.5, cv::INTER_LINEAR);
+
+      // gain
+      frame.convertTo(frame, CV_8U, 1.0, 0);
+
+      // show halfsize image
+      image_window->frame(frame);
+
+      blob_detector.detect(std::move(frame), std::move(blob));
+      blob_window->frame(blob);
+
+      ui_manager.render();
+    }
   }
+
+  cap.release();
+  ui_manager.exit();
 
   return 0;
 }

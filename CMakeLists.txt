@@ -40,6 +40,7 @@ include(CTest)
 include(Doctest)
 include(Documentation)
 include(Filesystem)
+include(Glad)
 include(LTO)
 include(Misc)
 include(Spdlog)
@@ -55,11 +56,6 @@ find_lto(CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-set(Boost_USE_DEBUG_LIBS         OFF) # ignore debug libs and
-set(Boost_USE_RELEASE_LIBS       ON)  # only find release libs
-set(Boost_USE_MULTITHREADED      ON)
-set(Boost_USE_STATIC_RUNTIME     OFF)
-
 enable_testing()
 
 if(${CMAKE_BUILD_TYPE} MATCHES Debug)
@@ -68,36 +64,9 @@ endif()
 
 add_definitions(-DATM_COMPILATION)
 
-# Add PIGPIO lib or not
-set(RASPI_LIB "")
+find_package(Threads REQUIRED)
 
-EXECUTE_PROCESS(COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE arch)
-
-if (${arch} MATCHES "^arm")
-  find_package(pigpio REQUIRED)
-  LIST(APPEND RASPI_LIB "pigpio")
-  LIST(APPEND RASPI_LIB "rt")
-
-  # check version
-  # glxinfo | grep "OpenGL version string:" | grep -E -o "[0-9]\.[0-9]" | head -1
-
-  # to make OpenGL3 + ImGUI works
-  # OpenGL in Raspi is basically OpenGL2
-  # there is error with :
-  # GL_SAMPLER_BINDING (needs to be OpenGL3)
-  # https://github.com/ocornut/imgui/pull/1806
-
-  # set(GLAD_API "gl=2.1,gles2=2.0" CACHE STRING "API type/version pairs, like \"gl=3.2,gles=\", no version means latest" FORCE)
-  set(OPENGL2 ON)
-  set(OPENGL3 OFF)
-else()
-  add_definitions(-DMOCK_GPIO)
-  set(GLAD_API "" CACHE STRING "API type/version pairs, like \"gl=3.2,gles=\", no version means latest" FORCE)
-  include(Glad)
-  set(OPENGL3 OFF)
-  set(OPENGL3 ON)
-endif()
-
+# Boost library
 set(Boost_USE_STATIC_LIBS        ON)  # only find static libs
 set(Boost_USE_DEBUG_LIBS         OFF) # ignore debug libs and
 set(Boost_USE_RELEASE_LIBS       ON)  # only find release libs
@@ -108,13 +77,30 @@ find_package(Boost 1.71.0 REQUIRED COMPONENTS
 
 add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
 
-find_package(OpenCV REQUIRED)
-find_package(Threads REQUIRED)
+# OpenCV library
+find_package(OpenCV REQUIRED
+  core
+  xfeatures2d
+  videoio)
+set(WITH_GTK OFF CACHE BOOL "" FORCE)
+set(WITH_QT  OFF CACHE BOOL "" FORCE)
+
+# OpenGL
+find_package(OpenGL REQUIRED)
+find_package(glfw3 REQUIRED)
+
+# IMGUI
+set(IMGUI_VERSION 1.77)
+set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/external/imgui")
+find_package(ImGui ${IMGUI_VERSION} REQUIRED)
+
 
 if (Boost_FOUND)
   add_subdirectory(libutil)
   add_subdirectory(libcore)
   add_subdirectory(libnetworking)
+  add_subdirectory(libdetector)
+  add_subdirectory(libgui)
   add_subdirectory(driver)
   add_subdirectory(app)
 endif()
