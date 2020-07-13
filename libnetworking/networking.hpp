@@ -18,6 +18,7 @@
 #include <memory>
 #include <optional>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -44,11 +45,15 @@
 
 #include <libcore/core.hpp>
 
+#include <libgui/gui.hpp>
+
 // 4. Local
 #include "modbus.hpp"
 
 #include "modbus-tcp.hpp"
 
 #include "modbus-config.hpp"
+
+#include "modbus-window.hpp"
 
 #endif  // LIB_NETWORKING_NETWORKING_HPP_

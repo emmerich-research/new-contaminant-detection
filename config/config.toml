@@ -10,7 +10,7 @@ debug                        = true # will log all debugging things
 [communication.plc-jetson]
 type                         = "input-coil"
 
-[communication.plc-jetson.start-imaging]
+[communication.plc-jetson.imaging-request]
 address                      = 289
 
 [communication.jetson-plc]

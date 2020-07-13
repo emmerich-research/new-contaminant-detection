@@ -2,14 +2,15 @@
 #define LIB_NETWORKING_MODBUS_CONFIG_HPP_
 
 /** @file modbus-config.hpp
- *  @brief Modbus implementation
+ *  @brief Modbus config implementation
  *
- * Modbus Implementation
+ * Modbus config Implementation
  */
 
 #include <cstdint>
-#include <map>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 #include <libcore/core.hpp>
 
@@ -28,16 +29,27 @@ struct Metadata {
 
 class ModbusConfig {
  public:
-  typedef std::map<std::string, modbus::Metadata> Table;
+  typedef std::unordered_map<std::string, modbus::Metadata> Table;
 
   ModbusConfig(const impl::ConfigImpl* config);
-  ~ModbusConfig();
 
   inline const impl::ConfigImpl* base_config() const { return base_config_; }
 
   const modbus::Metadata& data_table(const std::string& id) const;
   const modbus::Metadata& plc_jetson_comm_table(const std::string& id) const;
   const modbus::Metadata& jetson_plc_comm_table(const std::string& id) const;
+
+  inline const std::vector<std::string>& data_keys() const {
+    return data_keys_;
+  }
+
+  inline const std::vector<std::string>& plc_jetson_comm_keys() const {
+    return plc_jetson_comm_keys_;
+  }
+
+  inline const std::vector<std::string>& jetson_plc_comm_keys() const {
+    return jetson_plc_comm_keys_;
+  }
 
  private:
   void load();
@@ -47,9 +59,14 @@ class ModbusConfig {
 
  private:
   const impl::ConfigImpl* base_config_;
-  Table                   data_;
-  Table                   plc_jetson_comm_;
-  Table                   jetson_plc_comm_;
+
+  Table data_;
+  Table plc_jetson_comm_;
+  Table jetson_plc_comm_;
+
+  std::vector<std::string> data_keys_;
+  std::vector<std::string> plc_jetson_comm_keys_;
+  std::vector<std::string> jetson_plc_comm_keys_;
 };
 }  // namespace networking
 

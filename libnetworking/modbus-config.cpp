@@ -13,7 +13,10 @@ struct from<ns(networking::modbus::Metadata)> {
   static ns(networking::modbus::Metadata)
       from_toml(const basic_value<C, M, A>& v) {
     ns(networking::modbus::Metadata) metadata;
-    metadata.address = find<std::uint16_t>(v, "address");
+    metadata.address = 0;
+    if (v.contains("address")) {
+      metadata.address = find<std::uint16_t>(v, "address") - 1;
+    }
     metadata.length = 1;
     if (v.contains("length")) {
       metadata.length = find<std::uint16_t>(v, "length");
@@ -33,8 +36,6 @@ ModbusConfig::ModbusConfig(const impl::ConfigImpl* config)
   load();
 }
 
-ModbusConfig::~ModbusConfig() {}
-
 void ModbusConfig::load() {
   load_data();
   load_plc_jetson_comm();
@@ -42,17 +43,27 @@ void ModbusConfig::load() {
 }
 
 void ModbusConfig::load_data() {
+  massert(State::get() != nullptr, "sanity");
+  auto* state = State::get();
+
   for (const auto& [k, v] : base_config()->find<toml::table>("data")) {
     if (k != "type") {
+      state->data_table(k, -1);
+      data_keys_.push_back(k);
       data_[k] = base_config()->find<modbus::Metadata>("data", k);
     }
   }
 }
 
 void ModbusConfig::load_plc_jetson_comm() {
+  massert(State::get() != nullptr, "sanity");
+  auto* state = State::get();
+
   for (const auto& [k, v] :
        base_config()->find<toml::table>("communication", "plc-jetson")) {
     if (k != "type") {
+      state->status_table(k, false);
+      plc_jetson_comm_keys_.push_back(k);
       plc_jetson_comm_[k] = base_config()->find<modbus::Metadata>(
           "communication", "plc-jetson", k);
     }
@@ -60,9 +71,14 @@ void ModbusConfig::load_plc_jetson_comm() {
 }
 
 void ModbusConfig::load_jetson_plc_comm() {
+  massert(State::get() != nullptr, "sanity");
+  auto* state = State::get();
+
   for (const auto& [k, v] :
        base_config()->find<toml::table>("communication", "jetson-plc")) {
     if (k != "type") {
+      state->status_table(k, false);
+      jetson_plc_comm_keys_.push_back(k);
       jetson_plc_comm_[k] = base_config()->find<modbus::Metadata>(
           "communication", "jetson-plc", k);
     }

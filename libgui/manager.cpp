@@ -99,10 +99,9 @@ void Manager::init(const char* name, int width, int height) {
   ImGui_ImplOpenGL3_Init(glsl_version);
 
   ImFontConfig font_config;
-  font_config.SizePixels = 20.0f;
+  font_config.SizePixels = 25.0f;
 
   ImGuiIO& io = ImGui::GetIO();
-  (void)io;
   io.Fonts->AddFontDefault(&font_config);
 }
 

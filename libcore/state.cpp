@@ -5,7 +5,7 @@
 NAMESPACE_BEGIN
 
 namespace impl {
-StateImpl::StateImpl() : imaging_request_{false}, imaging_{false} {
+StateImpl::StateImpl() {
   DEBUG_ONLY(obj_name_ = "StateImpl");
 }
 
@@ -15,24 +15,32 @@ StateImpl::StateMutex& StateImpl::mutex() {
   return mutex_;
 }
 
-bool StateImpl::imaging_request() {
+StateImpl::StatusTable& StateImpl::status_table() {
   StateImpl::StateLock lock(mutex());
-  return imaging_;
+  return status_table_;
 }
 
-void StateImpl::imaging_request(bool request_status) {
+bool StateImpl::status_table(const std::string& id) {
   StateImpl::StateLock lock(mutex());
-  imaging_request_ = request_status;
+  return status_table_[id];
 }
 
-bool StateImpl::imaging() {
-  StateImpl::StateLock lock(mutex());
-  return imaging_;
+void StateImpl::status_table(const std::string& id, bool value) {
+  status_table_[id] = value;
 }
 
-void StateImpl::imaging(bool status) {
+StateImpl::DataTable& StateImpl::data_table() {
   StateImpl::StateLock lock(mutex());
-  imaging_ = status;
+  return data_table_;
+}
+
+int StateImpl::data_table(const std::string& id) {
+  StateImpl::StateLock lock(mutex());
+  return data_table_[id];
+}
+
+void StateImpl::data_table(const std::string& id, int value) {
+  data_table_[id] = value;
 }
 }  // namespace impl
 

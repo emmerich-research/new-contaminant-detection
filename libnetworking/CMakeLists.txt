@@ -4,6 +4,7 @@ ucm_add_files(
   "modbus.cpp"
   "modbus-tcp.cpp"
   "modbus-config.cpp"
+  "modbus-window.cpp"
 
   TO SOURCES)
   
@@ -26,7 +27,8 @@ target_link_libraries(networking PUBLIC
   ${CMAKE_THREAD_LIBS_INIT}
   ${Boost_LIBRARIES}
   "${PROJECT_NAMESPACE}::util"
-  "${PROJECT_NAMESPACE}::core")
+  "${PROJECT_NAMESPACE}::core"
+  "${PROJECT_NAMESPACE}::gui")
 
 target_set_warnings(networking
   ENABLE ALL

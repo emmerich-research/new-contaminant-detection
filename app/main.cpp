@@ -60,10 +60,10 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
   gui::ImageWindow* image_window = new gui::ImageWindow("image", 300, 300);
   gui::ImageWindow* blob_window =
       new gui::ImageWindow("blob-detection", 300, 300);
-
   // add window
   ui_manager.add_window(image_window);
   ui_manager.add_window(blob_window);
+  ui_manager.add_window<networking::modbus::ModbusWindow>(config);
 
   while (ui_manager.handle_events()) {
     cv::Mat frame, blob;

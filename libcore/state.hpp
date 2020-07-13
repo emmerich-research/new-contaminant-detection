@@ -9,6 +9,7 @@
 
 #include <shared_mutex>
 #include <thread>
+#include <unordered_map>
 #include <utility>
 
 #include <libutil/util.hpp>
@@ -47,6 +48,8 @@ class StateImpl : public StackObj {
  public:
   using StateMutex = std::shared_mutex;
   using StateLock = std::lock_guard<StateMutex>;
+  using StatusTable = std::unordered_map<std::string, bool>;
+  using DataTable = std::unordered_map<std::string, int>;
 
  private:
   /**
@@ -62,29 +65,43 @@ class StateImpl : public StackObj {
    */
   ~StateImpl();
   /**
-   * Imaging request
-   *
-   * @return imaging request status
+   * Get status table
    */
-  bool imaging_request();
+  StatusTable& status_table();
   /**
-   * Imaging request
+   * Get entry from status table
    *
-   * @param imaging request status
+   * @param id id of entry
+   *
+   * @return status of specified entry id in status table
    */
-  void imaging_request(bool request_status);
+  bool status_table(const std::string& id);
   /**
-   * Imaging  status
+   * Create/Update status table entry
    *
-   * @return imaging status
+   * @param id    id of entry
+   * @param value new status value for specific id
    */
-  bool imaging();
+  void status_table(const std::string& id, bool value);
   /**
-   * Imaging  status
-   *
-   * @param new imaging status
+   * Get data table
    */
-  void imaging(bool status);
+  DataTable& data_table();
+  /**
+   * Get entry from data table
+   *
+   * @param id id of entry
+   *
+   * @return value of specified entry id in data table
+   */
+  int data_table(const std::string& id);
+  /**
+   * Create/Update data table entry
+   *
+   * @param id    id of entry
+   * @param value new data value for specific id
+   */
+  void data_table(const std::string& id, int value);
 
  private:
   /**
@@ -100,13 +117,13 @@ class StateImpl : public StackObj {
    */
   StateMutex mutex_;
   /**
-   * Imaging request
+   * Status table for and from PLC
    */
-  bool imaging_request_;
+  StatusTable status_table_;
   /**
-   * Imaging status
+   * Data table from PLC
    */
-  bool imaging_;
+  DataTable data_table_;
 };
 }  // namespace impl
 
