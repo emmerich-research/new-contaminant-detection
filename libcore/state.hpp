@@ -59,9 +59,32 @@ class StateImpl : public StackObj {
    * StateImpl Destructor
    *
    * Noop
-   *
    */
-  ~StateImpl() = default;
+  ~StateImpl();
+  /**
+   * Imaging request
+   *
+   * @return imaging request status
+   */
+  bool imaging_request();
+  /**
+   * Imaging request
+   *
+   * @param imaging request status
+   */
+  void imaging_request(bool request_status);
+  /**
+   * Imaging  status
+   *
+   * @return imaging status
+   */
+  bool imaging();
+  /**
+   * Imaging  status
+   *
+   * @param new imaging status
+   */
+  void imaging(bool status);
 
  private:
   /**
@@ -74,9 +97,16 @@ class StateImpl : public StackObj {
  private:
   /**
    *  Mutex for locking
-   *
    */
   StateMutex mutex_;
+  /**
+   * Imaging request
+   */
+  bool imaging_request_;
+  /**
+   * Imaging status
+   */
+  bool imaging_;
 };
 }  // namespace impl
 

@@ -20,7 +20,7 @@ int main(int argc, const char* argv[]) {
   }
 
   if (argc != 3) {
-    std::cerr << "Usage: plc-comm <hostname> <port>\n";
+    std::cerr << "Usage: plc-comm <hostname> <port>" << std::endl;
     return 1;
   }
 

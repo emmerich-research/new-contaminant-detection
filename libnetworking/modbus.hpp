@@ -322,7 +322,7 @@ class Modbus : public StackObj {
    */
   Response write_bit(const std::uint16_t& address, const bool& value);
   /**
-   * Write single bit/coil to Modbus remote device
+   * Write single register to Modbus remote device
    *
    * @param address  address to write
    * @param value    value to write

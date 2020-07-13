@@ -46,8 +46,6 @@ class ConfigImpl : public StackObj {
   friend ATM_STATUS StaticObj<ConfigImpl>::create(Args&&... args);
 
  public:
-  typedef std::pair<double, double> coordinate;
-  typedef std::vector<coordinate>   path_container;
   /**
    * Get name of app from config
    *
@@ -64,6 +62,12 @@ class ConfigImpl : public StackObj {
    * @return debug status
    */
   bool debug() const;
+  /**
+   * Get TOML Config
+   *
+   * @return config tree
+   */
+  inline const toml::value& config() const { return config_; }
 
  private:
   /**
@@ -81,12 +85,6 @@ class ConfigImpl : public StackObj {
    *
    */
   ~ConfigImpl() = default;
-  /**
-   * Get TOML Config
-   *
-   * @return config tree
-   */
-  inline const toml::value& config() const { return config_; }
   /**
    * Find key in the TOML config
    *

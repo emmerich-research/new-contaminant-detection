@@ -49,4 +49,6 @@
 
 #include "modbus-tcp.hpp"
 
+#include "modbus-config.hpp"
+
 #endif  // LIB_NETWORKING_NETWORKING_HPP_

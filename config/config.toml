@@ -5,3 +5,82 @@
 [general]
 name                         = "Emmerich Contaminants Detection"
 debug                        = true # will log all debugging things
+
+[communication]
+[communication.plc-jetson]
+type                         = "input-coil"
+
+[communication.plc-jetson.start-imaging]
+address                      = 289
+
+[communication.jetson-plc]
+type                         = "coil"
+
+[communication.jetson-plc.imaging-done]
+address                      = 1
+
+[communication.jetson-plc.imaging-ready]
+address                      = 2
+
+[data]
+type                         = "input-register"
+
+[data.year]
+address                      = 1
+length                       = 1
+
+[data.month]
+address                      = 2
+length                       = 1
+
+[data.day]
+address                      = 3
+length                       = 1
+
+[data.hour]
+address                      = 4
+length                       = 1
+
+[data.minute]
+address                      = 5
+length                       = 1
+
+[data.second]
+address                      = 6
+length                       = 1
+
+[data.sku-card-instruction]
+address                      = 7
+length                       = 1
+
+[data.sku-number]
+address                      = 8
+length                       = 1
+
+[data.sku-production-day]
+address                      = 9
+length                       = 1
+
+[data.heartbit]
+address                      = 10
+length                       = 1
+
+[data.tray-barcode]
+address                      = 11
+length                       = 2
+
+[data.lid-barcode]
+address                      = 13
+length                       = 2
+
+[data.batch-id]
+address                      = 15
+length                       = 2
+
+[data.infection-id]
+address                      = 17
+length                       = 2
+
+[data.command]
+address                      = 19
+length                       = 1

@@ -18,6 +18,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     return ATM_ERR;
   }
 
+  networking::ModbusConfig config{Config::get()};
+
   gui::Manager ui_manager;
 
   ui_manager.init("Emmerich Vision", 400, 400);
@@ -66,13 +68,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
   while (ui_manager.handle_events()) {
     cv::Mat frame, blob;
     if (cap.read(frame)) {
-      // make halfsize image
-      // cv::resize(frame, frame, cv::Size{0, 0}, 0.5, 0.5, cv::INTER_LINEAR);
-
-      // gain
       frame.convertTo(frame, CV_8U, 1.0, 0);
 
-      // show halfsize image
+      // show
       image_window->frame(frame);
 
       blob_detector.detect(std::move(frame), std::move(blob));

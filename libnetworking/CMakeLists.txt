@@ -3,6 +3,7 @@ project(networking)
 ucm_add_files(
   "modbus.cpp"
   "modbus-tcp.cpp"
+  "modbus-config.cpp"
 
   TO SOURCES)
   
