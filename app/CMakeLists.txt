@@ -9,14 +9,14 @@ ucm_add_target(
   TYPE EXECUTABLE
   SOURCES ${SOURCES})
 
-target_include_directories(app PUBLIC
-  "$<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>")
+# target_include_directories(app PUBLIC)
 
 target_link_libraries(app PRIVATE
-  ${Boost_LIBRARIES}
   "${PROJECT_NAMESPACE}::util"
   "${PROJECT_NAMESPACE}::core"
-  "${PROJECT_NAMESPACE}::networking")
+  "${PROJECT_NAMESPACE}::networking"
+  "${PROJECT_NAMESPACE}::detector"
+  "${PROJECT_NAMESPACE}::gui")
 
 target_set_warnings(app
   ENABLE ALL
