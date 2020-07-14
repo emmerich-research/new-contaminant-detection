@@ -22,8 +22,22 @@ NAMESPACE_BEGIN
 
 namespace networking {
 namespace modbus {
-TCP::TCP(const char*            host,
-         const char*            port,
+// TCP::TCP(const char*            host,
+//          const char*            port,
+//          const Modbus::Timeout& connect_timeout,
+//          const Modbus::Timeout& request_timeout,
+//          const Modbus::Timeout& response_timeout)
+//     : Modbus{HEADER_LENGTH, connect_timeout, request_timeout,
+//     response_timeout},
+//       host_{host},
+//       port_{port},
+//       io_context_{},
+//       socket_{io_context_} {
+//   LOG_DEBUG("PORTTTT3 {} {}", port, fmt::format("{}", port));
+// }
+
+TCP::TCP(const std::string&     host,
+         const std::string&     port,
          const Modbus::Timeout& connect_timeout,
          const Modbus::Timeout& request_timeout,
          const Modbus::Timeout& response_timeout)
@@ -33,20 +47,12 @@ TCP::TCP(const char*            host,
       io_context_{},
       socket_{io_context_} {}
 
-TCP::TCP(const char*            host,
-         const std::string&     port,
-         const Modbus::Timeout& connect_timeout,
-         const Modbus::Timeout& request_timeout,
-         const Modbus::Timeout& response_timeout)
-    : TCP{host, port.c_str(), connect_timeout, request_timeout,
-          response_timeout} {}
-
-TCP::TCP(const char*            host,
+TCP::TCP(const std::string&     host,
          const std::uint16_t&   port,
          const Modbus::Timeout& connect_timeout,
          const Modbus::Timeout& request_timeout,
          const Modbus::Timeout& response_timeout)
-    : TCP{host, std::to_string(port).c_str(), connect_timeout, request_timeout,
+    : TCP{host, std::to_string(port), connect_timeout, request_timeout,
           response_timeout} {}
 
 TCP::~TCP() {}
@@ -129,12 +135,6 @@ unsigned int TCP::build_request(Modbus::Buffer&         req,
   // split into HI/LOW repr
   Modbus::uint16_to_uint8(req, quantity, 10);
 
-  Buffer a = {75, 30};
-
-  LOG_DEBUG("Address {}, HI/LOW={}, HI={}, LOW={}, a={}", address,
-            Modbus::uint8_to_uint16(req, 8), req[8], req[9],
-            Modbus::uint8_to_uint16(a));
-
   return REQ_LENGTH;
 }
 
@@ -146,8 +146,8 @@ void TCP::send_request(Modbus::Buffer&    request,
    *
    * MBAP for TCP is defined as request length - header length
    * Header length consists of transaction id (2 bytes) + protocol id (2 bytes)
-   * + length (2 bytes) + unit id (1 byte) However, MBAP length includes unit id
-   * as well So we need to substract by 6
+   * + length (2 bytes) + unit id (1 byte). However, MBAP length includes unit
+   * id as well. So we need to substract by 6
    */
   const std::uint16_t mbap_length = static_cast<std::uint16_t>(length - 6);
 
@@ -155,8 +155,8 @@ void TCP::send_request(Modbus::Buffer&    request,
   Modbus::uint16_to_uint8(request, mbap_length, 4);
 
   // send data (blocking)
-  LOG_DEBUG("Sending data to Modbus Server hostname={}, port={}", host(),
-            port());
+  DEBUG_ONLY(LOG_DEBUG("Sending data to Modbus Server hostname={}, port={}",
+                       host(), port()));
 
   boost::asio::async_write(socket(), boost::asio::buffer(request, length),
                            boost::lambda::var(ec) = boost::lambda::_1);
@@ -165,9 +165,9 @@ void TCP::send_request(Modbus::Buffer&    request,
 
   if (ec) {
     // timeout or another issues
-    LOG_ERROR("Failed to send data to server");
+    DEBUG_ONLY(LOG_ERROR("Failed to send data to server"));
   } else {
-    LOG_INFO("Successfully send data to server");
+    DEBUG_ONLY(LOG_INFO("Successfully send data to server"));
   }
 }
 
@@ -181,8 +181,9 @@ void TCP::get_response(Modbus::Buffer&    response,
   response_length = 0;
 
   // receive data (blocking)
-  LOG_DEBUG("Getting response from Modbus Server hostname={}, port={}", host(),
-            port());
+  DEBUG_ONLY(
+      LOG_DEBUG("Getting response from Modbus Server hostname={}, port={}",
+                host(), port()));
 
   auto buffer = boost::asio::buffer(response);
 
@@ -204,7 +205,7 @@ void TCP::get_response(Modbus::Buffer&    response,
     }
   }
 
-  LOG_DEBUG("Done getting response");
+  DEBUG_ONLY(LOG_DEBUG("Done getting response"));
 }
 
 void TCP::handle_get_response(const Modbus::ErrorCode& error_code,
@@ -220,10 +221,11 @@ void TCP::handle_get_response(const Modbus::ErrorCode& error_code,
     return;
   }
 
-  LOG_DEBUG(
+  DEBUG_ONLY(LOG_DEBUG(
       "Bytes transferred={}B, Phase={}, Res Length={}B, Length to Receive={}B, "
       "ec={}",
-      bytes_transferred, phase, response_length, length_to_receive, ec.value());
+      bytes_transferred, phase, response_length, length_to_receive,
+      ec.value()));
   length_to_receive -= bytes_transferred;
   response_length += bytes_transferred;
 
@@ -262,7 +264,7 @@ void TCP::handle_get_response(const Modbus::ErrorCode& error_code,
     std::copy(response.begin(), response.begin() + response_length,
               std::back_inserter(vec));
     LOG_DEBUG("Current Buffer={}", vec);
-  })
+  });
 }
 
 Modbus::Response TCP::send(Modbus::Buffer& request, const std::size_t& length) {
@@ -335,7 +337,7 @@ Modbus::Response TCP::send(Modbus::Buffer& request, const std::size_t& length) {
                        true};
   }
 
-  LOG_DEBUG("Request and response are OK, returning data");
+  DEBUG_ONLY(LOG_DEBUG("Request and response are OK, returning data"));
 
   // all tests are passed, we can return the right response
   return ModbusResponse{/** transaction id */

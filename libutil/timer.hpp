@@ -10,10 +10,18 @@
 using time_unit = uint64_t;
 
 enum class time_units {
+  seconds,
   millis,
   micros,
   nanos,
 };
+
+/**
+ * @brief Get time stamp in seconds.
+ *
+ * @return time stamp in seconds
+ */
+time_unit seconds(void);
 
 /**
  * @brief Get time stamp in milliseconds.

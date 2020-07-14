@@ -39,6 +39,57 @@ namespace modbus {
 class TCP : public Modbus, std::enable_shared_from_this<TCP> {
  public:
   /**
+   * modbus::TCP Constructor
+   *
+   * @param host       server hostname / server IP
+   * @param port       server port, default 502 based on Modbus TCP/IP
+   * implementation (should be more than 0 and less than 65535 (16 bit))
+   * @param connect_timeout  connect to server timeout (default: Infinite)
+   * @param request_timeout  request timeout (default: Infinite)
+   * @param response_timeout response timeout (default: Infinite)
+   */
+  // TCP(const char*            host,
+  //     const char*            port = "502",
+  //     const Modbus::Timeout& connect_timeout = Modbus::MaxTimeout,
+  //     const Modbus::Timeout& request_timeout = Modbus::MaxTimeout,
+  //     const Modbus::Timeout& response_timeout = Modbus::MaxTimeout);
+  /**
+   * modbus::TCP Constructor
+   *
+   * @param host       server hostname / server IP
+   * @param port       server port, default 502 based on Modbus TCP/IP
+   * implementation (should be more than 0 and less than 65535 (16 bit))
+   * @param connect_timeout  connect to server timeout (default: Infinite)
+   * @param request_timeout  request timeout (default: Infinite)
+   * @param response_timeout response timeout (default: Infinite)
+   */
+  TCP(const std::string&     host,
+      const std::string&     port,
+      const Modbus::Timeout& connect_timeout = Modbus::MaxTimeout,
+      const Modbus::Timeout& request_timeout = Modbus::MaxTimeout,
+      const Modbus::Timeout& response_timeout = Modbus::MaxTimeout);
+  /**
+   * modbus::TCP Constructor
+   *
+   * @param host       server hostname / server IP
+   * @param port       server port, default 502 based on Modbus TCP/IP
+   * implementation (should be more than 0 and less than 65535 (16 bit))
+   * @param connect_timeout  connect to server timeout (default: Infinite)
+   * @param request_timeout  request timeout (default: Infinite)
+   * @param response_timeout response timeout (default: Infinite)
+   */
+  TCP(const std::string&     host,
+      const std::uint16_t&   port,
+      const Modbus::Timeout& connect_timeout = Modbus::MaxTimeout,
+      const Modbus::Timeout& request_timeout = Modbus::MaxTimeout,
+      const Modbus::Timeout& response_timeout = Modbus::MaxTimeout);
+  /**
+   * modbus::TCP Destructor
+   *
+   * Close Modbus TCP socket and instance
+   */
+  virtual ~TCP() override;
+  /**
    * Create shared_ptr<modbus::TCP>
    *
    * Pass every args to modbus::TCP()
@@ -87,68 +138,17 @@ class TCP : public Modbus, std::enable_shared_from_this<TCP> {
 
  protected:
   /**
-   * modbus::TCP Constructor
-   *
-   * @param host       server hostname / server IP
-   * @param port       server port, default 502 based on Modbus TCP/IP
-   * implementation (should be more than 0 and less than 65535 (16 bit))
-   * @param connect_timeout  connect to server timeout (default: Infinite)
-   * @param request_timeout  request timeout (default: Infinite)
-   * @param response_timeout response timeout (default: Infinite)
-   */
-  TCP(const char*            host,
-      const char*            port = "502",
-      const Modbus::Timeout& connect_timeout = Modbus::MaxTimeout,
-      const Modbus::Timeout& request_timeout = Modbus::MaxTimeout,
-      const Modbus::Timeout& response_timeout = Modbus::MaxTimeout);
-  /**
-   * modbus::TCP Constructor
-   *
-   * @param host       server hostname / server IP
-   * @param port       server port, default 502 based on Modbus TCP/IP
-   * implementation (should be more than 0 and less than 65535 (16 bit))
-   * @param connect_timeout  connect to server timeout (default: Infinite)
-   * @param request_timeout  request timeout (default: Infinite)
-   * @param response_timeout response timeout (default: Infinite)
-   */
-  TCP(const char*            host,
-      const std::string&     port,
-      const Modbus::Timeout& connect_timeout = Modbus::MaxTimeout,
-      const Modbus::Timeout& request_timeout = Modbus::MaxTimeout,
-      const Modbus::Timeout& response_timeout = Modbus::MaxTimeout);
-  /**
-   * modbus::TCP Constructor
-   *
-   * @param host       server hostname / server IP
-   * @param port       server port, default 502 based on Modbus TCP/IP
-   * implementation (should be more than 0 and less than 65535 (16 bit))
-   * @param connect_timeout  connect to server timeout (default: Infinite)
-   * @param request_timeout  request timeout (default: Infinite)
-   * @param response_timeout response timeout (default: Infinite)
-   */
-  TCP(const char*            host,
-      const std::uint16_t&   port,
-      const Modbus::Timeout& connect_timeout = TCP::MaxTimeout,
-      const Modbus::Timeout& request_timeout = TCP::MaxTimeout,
-      const Modbus::Timeout& response_timeout = TCP::MaxTimeout);
-  /**
-   * modbus::TCP Destructor
-   *
-   * Close Modbus TCP socket and instance
-   */
-  virtual ~TCP() override;
-  /**
    * Get Modbus Server hostname
    *
    * @return Modbus server hostname
    */
-  inline const char* host() const { return host_; }
+  inline const std::string& host() const { return host_; }
   /**
    * Get Modbus Server port
    *
    * @return Modbus server port
    */
-  inline const char* port() const { return port_; }
+  inline const std::string& port() const { return port_; }
   /**
    * Get Boost Asio TCP socket
    *
@@ -246,11 +246,11 @@ class TCP : public Modbus, std::enable_shared_from_this<TCP> {
   /**
    * Remote server host to listen to
    */
-  const char* host_;
+  std::string host_;
   /**
    * Remote server port or listening to
    */
-  const char* port_;
+  std::string port_;
   /**
    * Boost Asio IO context
    */

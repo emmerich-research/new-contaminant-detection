@@ -10,6 +10,7 @@
 #pragma GCC system_header
 
 // 1. STL
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstdint>
@@ -17,6 +18,7 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <string>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
@@ -55,5 +57,7 @@
 #include "modbus-config.hpp"
 
 #include "modbus-window.hpp"
+
+#include "modbus-listener.hpp"
 
 #endif  // LIB_NETWORKING_NETWORKING_HPP_

@@ -34,6 +34,10 @@ class Window {
    * Show content of window
    */
   virtual void show() = 0;
+  /**
+   * Show content of window
+   */
+  virtual void after_render();
 
  protected:
   /**

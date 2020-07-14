@@ -30,6 +30,14 @@ bool ConfigImpl::debug() const {
 
   return false;
 }
+
+int ConfigImpl::camera_idx() const {
+  if (config().contains("camera") && config().at("camera").contains("index")) {
+    return find<int>("camera", "index");
+  }
+
+  return 0;  // default to zero (default camera)
+}
 }  // namespace impl
 
 NAMESPACE_END

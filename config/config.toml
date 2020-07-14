@@ -6,81 +6,91 @@
 name                         = "Emmerich Contaminants Detection"
 debug                        = true # will log all debugging things
 
-[communication]
-[communication.plc-jetson]
+[camera]
+index                        = 0
+
+[modbus]
+# ip-address                   = "192.168.100.11"
+ip-address                   = "192.168.5.48"
+port                         = 502
+
+[modbus.timeout]
+# in seconds
+connect                      = 10
+request                      = 10
+response                     = 10
+
+[modbus.communication]
+[modbus.communication.plc-jetson]
 type                         = "input-coil"
 
-[communication.plc-jetson.imaging-request]
+[modbus.communication.plc-jetson.imaging-request]
 address                      = 289
 
-[communication.jetson-plc]
+[modbus.communication.jetson-plc]
 type                         = "coil"
 
-[communication.jetson-plc.imaging-done]
+[modbus.communication.jetson-plc.imaging-done]
 address                      = 1
 
-[communication.jetson-plc.imaging-ready]
+[modbus.communication.jetson-plc.imaging-ready]
 address                      = 2
 
-[data]
+[modbus.data]
 type                         = "input-register"
 
-[data.year]
+[modbus.data.year]
 address                      = 1
 length                       = 1
 
-[data.month]
+[modbus.data.month]
 address                      = 2
 length                       = 1
 
-[data.day]
+[modbus.data.day]
 address                      = 3
 length                       = 1
 
-[data.hour]
+[modbus.data.hour]
 address                      = 4
 length                       = 1
 
-[data.minute]
+[modbus.data.minute]
 address                      = 5
 length                       = 1
 
-[data.second]
+[modbus.data.second]
 address                      = 6
 length                       = 1
 
-[data.sku-card-instruction]
+[modbus.data.sku-card-instruction]
 address                      = 7
 length                       = 1
 
-[data.sku-number]
+[modbus.data.sku-number]
 address                      = 8
 length                       = 1
 
-[data.sku-production-day]
+[modbus.data.sku-production-day]
 address                      = 9
 length                       = 1
 
-[data.heartbit]
+[modbus.data.heartbit]
 address                      = 10
 length                       = 1
 
-[data.tray-barcode]
+[modbus.data.tray-barcode]
 address                      = 11
 length                       = 2
 
-[data.lid-barcode]
+[modbus.data.lid-barcode]
 address                      = 13
 length                       = 2
 
-[data.batch-id]
+[modbus.data.batch-id]
 address                      = 15
 length                       = 2
 
-[data.infection-id]
+[modbus.data.infection-id]
 address                      = 17
 length                       = 2
-
-[data.command]
-address                      = 19
-length                       = 1

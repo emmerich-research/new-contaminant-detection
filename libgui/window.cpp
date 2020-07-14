@@ -25,6 +25,8 @@ void Window::render() {
 
   ImGui::End();
 }
+
+void Window::after_render() {}
 }  // namespace gui
 
 NAMESPACE_END

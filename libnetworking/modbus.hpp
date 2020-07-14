@@ -111,7 +111,7 @@ using seconds = std::chrono::seconds;
  * @author Ray Andrew
  * @date   July 2020
  */
-class Modbus : public StackObj {
+class Modbus {
  public:
   /**
    * Maximum Protocal Data Unit (PDU) Length
@@ -246,6 +246,21 @@ class Modbus : public StackObj {
 
  public:
   /**
+   * Modbus Constructor
+   *
+   * @param header_length   header length for specific protocol implementation
+   */
+  Modbus(const unsigned int& header_length,
+         const Timeout&      connect_timeout = MaxTimeout,
+         const Timeout&      request_timeout = MaxTimeout,
+         const Timeout&      response_timeout = MaxTimeout);
+  /**
+   * Modbus destructor
+   *
+   * Close connection and destroy Modbus instance
+   */
+  virtual ~Modbus();
+  /**
    * Open connection to Modbus server
    */
   virtual ErrorCode connect() = 0;
@@ -260,7 +275,19 @@ class Modbus : public StackObj {
    */
   virtual void slave_id(const std::uint8_t& slave_id);
   /**
-   * Read booelan status of bits/coils from Modbus remote device
+   * Read boolean status of bits/coils from Modbus remote device
+   * Result will be put into the buffer (containing distinct bits for each
+   * address)
+   *
+   * @param address  address to read
+   * @param quantity quantity of bits/coils
+   *
+   * @return Modbus::Response contains Response or Error
+   */
+  Response read_bits(const std::uint16_t& address,
+                     const std::uint16_t& quantity);
+  /**
+   * Read boolean status of bits/coils from Modbus remote device
    * Result will be put into the buffer (containing distinct bits for each
    * address)
    *
@@ -273,6 +300,17 @@ class Modbus : public StackObj {
   Response read_bits(const std::uint16_t& address,
                      const std::uint16_t& quantity,
                      Buffer8&             buffer);
+  /**
+   * Read input table of bits/coils from Modbus remote device
+   * Result will be put into the buffer
+   *
+   * @param address  address to read
+   * @param quantity quantity of bits/coils
+   *
+   * @return Modbus::Response contains Response or Error
+   */
+  Response read_input_bits(const std::uint16_t& address,
+                           const std::uint16_t& quantity);
   /**
    * Read input table of bits/coils from Modbus remote device
    * Result will be put into the buffer
@@ -292,6 +330,17 @@ class Modbus : public StackObj {
    *
    * @param address  address to read
    * @param quantity quantity of bits/coils
+   *
+   * @return Modbus::Response contains Response or Error
+   */
+  Response read_registers(const std::uint16_t& address,
+                          const std::uint16_t& quantity);
+  /**
+   * Read holding registers from Modbus remote device
+   * Result will be put into the buffer
+   *
+   * @param address  address to read
+   * @param quantity quantity of bits/coils
    * @param buffer   buffer to write
    *
    * @return Modbus::Response contains Response or Error
@@ -299,6 +348,17 @@ class Modbus : public StackObj {
   Response read_registers(const std::uint16_t& address,
                           const std::uint16_t& quantity,
                           Buffer16&            buffer);
+  /**
+   * Read input registers from Modbus remote device
+   * Result will be put into the buffer
+   *
+   * @param address  address to read
+   * @param quantity quantity of bits/coils
+   *
+   * @return Modbus::Response contains Response or Error
+   */
+  Response read_input_registers(const std::uint16_t& address,
+                                const std::uint16_t& quantity);
   /**
    * Read input registers from Modbus remote device
    * Result will be put into the buffer
@@ -367,6 +427,22 @@ class Modbus : public StackObj {
   Response mask_write_register(const std::uint16_t& address,
                                const std::uint16_t& and_mask,
                                const std::uint16_t& or_mask);
+  /**
+   * Write registers to Modbus remote device
+   *
+   * @param write_address  address to write
+   * @param write_quantity quantity of address to write
+   * @param value          value to write
+   * @param write_address  address to read
+   * @param write_quantity quantity of address to read
+   *
+   * @return Modbus::Response contains Response or Error
+   */
+  Response read_write_registers(const std::uint16_t& write_address,
+                                const std::uint16_t& write_quantity,
+                                const std::uint16_t* value,
+                                const std::uint16_t& read_address,
+                                const std::uint16_t& read_quantity);
   /**
    * Write registers to Modbus remote device
    *
@@ -467,6 +543,28 @@ class Modbus : public StackObj {
    * @return ModbusError
    */
   static ModbusError& get_error(Response& response);
+  /**
+   * Split 16 bit to 8 bit HI/LOW
+   *
+   * @param buffer     buffer to write
+   * @param value      value to split HI / LOW
+   * @param start_addr start address of buffer that will be splitted. start_addr
+   * will be HI and end_addr (start_addr + 1) will be LOW
+   */
+  static void uint16_to_uint8(Buffer&              buffer,
+                              const std::uint16_t& value,
+                              const unsigned int&  start_addr = 0);
+  /**
+   * Combine 8 bit to 16 bit
+   *
+   * @param buffer     buffer to read
+   * @param start_addr start address of buffer that will be grouped. start_addr
+   * will be HI and end_addr (start_addr + 1) will be LOW
+   *
+   * @return value in 16 bit
+   */
+  static std::uint16_t uint8_to_uint16(const Buffer&       buffer,
+                                       const unsigned int& start_addr = 0);
 
  protected:
   /**
@@ -588,28 +686,6 @@ class Modbus : public StackObj {
    */
   virtual Response send(Buffer& request, const std::size_t& length) = 0;
   /**
-   * Split 16 bit to 8 bit HI/LOW
-   *
-   * @param buffer     buffer to write
-   * @param value      value to split HI / LOW
-   * @param start_addr start address of buffer that will be splitted. start_addr
-   * will be HI and end_addr (start_addr + 1) will be LOW
-   */
-  static void uint16_to_uint8(Buffer&              buffer,
-                              const std::uint16_t& value,
-                              const unsigned int&  start_addr = 0);
-  /**
-   * Combine 8 bit to 16 bit
-   *
-   * @param buffer     buffer to read
-   * @param start_addr start address of buffer that will be grouped. start_addr
-   * will be HI and end_addr (start_addr + 1) will be LOW
-   *
-   * @return value in 16 bit
-   */
-  static std::uint16_t uint8_to_uint16(const Buffer&       buffer,
-                                       const unsigned int& start_addr = 0);
-  /**
    * Check confirmation reply from Modbus server
    *
    *
@@ -723,23 +799,6 @@ class Modbus : public StackObj {
   Response process_write_single(const modbus::function& function,
                                 const std::uint16_t&    address,
                                 const uint16_t&         value);
-
- protected:
-  /**
-   * Modbus Constructor
-   *
-   * @param header_length   header length for specific protocol implementation
-   */
-  Modbus(const unsigned int& header_length,
-         const Timeout&      connect_timeout = MaxTimeout,
-         const Timeout&      request_timeout = MaxTimeout,
-         const Timeout&      response_timeout = MaxTimeout);
-  /**
-   * Modbus destructor
-   *
-   * Close connection and destroy Modbus instance
-   */
-  virtual ~Modbus();
 
  protected:
   /**

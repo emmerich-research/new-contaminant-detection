@@ -5,6 +5,7 @@ ucm_add_files(
   "modbus-tcp.cpp"
   "modbus-config.cpp"
   "modbus-window.cpp"
+  "modbus-listener.cpp"
 
   TO SOURCES)
   

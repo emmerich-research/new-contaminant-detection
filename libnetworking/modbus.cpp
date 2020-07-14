@@ -9,7 +9,7 @@
 NAMESPACE_BEGIN
 
 namespace networking {
-const Modbus::Timeout Modbus::MaxTimeout = modbus::time::minutes(1);
+const Modbus::Timeout Modbus::MaxTimeout = modbus::time::minutes(5);
 
 Modbus::Modbus(const unsigned int&    header_length,
                const Modbus::Timeout& connect_timeout,
@@ -21,7 +21,6 @@ Modbus::Modbus(const unsigned int&    header_length,
       connect_timeout_{connect_timeout},
       request_timeout_{request_timeout},
       response_timeout_{response_timeout} {
-  DEBUG_ONLY(obj_name_ = "Modbus");
   LOG_DEBUG("Initializing Modbus with header length {}", header_length);
   response_callback_ = []([[maybe_unused]] const auto& response) {};
   error_callback_ = []([[maybe_unused]] const auto& error) {};
@@ -368,6 +367,12 @@ Modbus::Response Modbus::process_read_bits(const modbus::function& function,
 }
 
 Modbus::Response Modbus::read_bits(const std::uint16_t& address,
+                                   const std::uint16_t& quantity) {
+  Buffer buffer;
+  return read_bits(address, quantity, buffer);
+}
+
+Modbus::Response Modbus::read_bits(const std::uint16_t& address,
                                    const std::uint16_t& quantity,
                                    Buffer&              buffer) {
   if (!check_quantity(quantity, MAX_READ_BITS)) {
@@ -378,10 +383,17 @@ Modbus::Response Modbus::read_bits(const std::uint16_t& address,
         /** internal */ true};
   }
 
-  LOG_INFO("Read bits with address={} and quantity={}", address, quantity);
+  DEBUG_ONLY(LOG_DEBUG("Read bits with address={} and quantity={}", address,
+                       quantity));
 
   return process_read_bits(modbus::function::read_coils, address, quantity,
                            buffer);
+}
+
+Modbus::Response Modbus::read_input_bits(const std::uint16_t& address,
+                                         const std::uint16_t& quantity) {
+  Buffer8 buffer;
+  return read_input_bits(address, quantity, buffer);
 }
 
 Modbus::Response Modbus::read_input_bits(const std::uint16_t& address,
@@ -395,8 +407,8 @@ Modbus::Response Modbus::read_input_bits(const std::uint16_t& address,
         /** internal */ true};
   }
 
-  LOG_INFO("Read input bits with address={} and quantity={}", address,
-           quantity);
+  DEBUG_ONLY(LOG_DEBUG("Read input bits with address={} and quantity={}",
+                       address, quantity));
 
   return process_read_bits(modbus::function::read_discrete_inputs, address,
                            quantity, buffer);
@@ -438,6 +450,12 @@ Modbus::Response Modbus::process_read_registers(
 }
 
 Modbus::Response Modbus::read_registers(const std::uint16_t& address,
+                                        const std::uint16_t& quantity) {
+  Buffer16 buffer;
+  return read_registers(address, quantity, buffer);
+}
+
+Modbus::Response Modbus::read_registers(const std::uint16_t& address,
                                         const std::uint16_t& quantity,
                                         Buffer16&            buffer) {
   if (!check_quantity(quantity, MAX_READ_REGISTERS)) {
@@ -448,10 +466,17 @@ Modbus::Response Modbus::read_registers(const std::uint16_t& address,
         /** internal */ true};
   }
 
-  LOG_INFO("Read registers with address={} and quantity={}", address, quantity);
+  DEBUG_ONLY(LOG_DEBUG("Read registers with address={} and quantity={}",
+                       address, quantity));
 
   return process_read_registers(modbus::function::read_holding_registers,
                                 address, quantity, buffer);
+}
+
+Modbus::Response Modbus::read_input_registers(const std::uint16_t& address,
+                                              const std::uint16_t& quantity) {
+  Buffer16 buffer;
+  return read_input_registers(address, quantity, buffer);
 }
 
 Modbus::Response Modbus::read_input_registers(const std::uint16_t& address,
@@ -465,8 +490,8 @@ Modbus::Response Modbus::read_input_registers(const std::uint16_t& address,
         /** internal */ true};
   }
 
-  LOG_INFO("Read input registers with address={} and quantity={}", address,
-           quantity);
+  DEBUG_ONLY(LOG_DEBUG("Read input registers with address={} and quantity={}",
+                       address, quantity));
 
   return process_read_registers(modbus::function::read_input_registers, address,
                                 quantity, buffer);
@@ -493,16 +518,16 @@ Modbus::Response Modbus::process_write_single(const modbus::function& function,
 
 Modbus::Response Modbus::write_bit(const std::uint16_t& address,
                                    const bool&          value) {
-  LOG_INFO("Write single bit/coil with address={} and value={}", address,
-           value);
+  DEBUG_ONLY(LOG_DEBUG("Write single bit/coil with address={} and value={}",
+                       address, value));
   return process_write_single(modbus::function::write_single_coil, address,
                               value ? 0xFF00 : 0x0);
 }
 
 Modbus::Response Modbus::write_register(const std::uint16_t& address,
                                         const std::uint16_t& value) {
-  LOG_INFO("Write single register with address={} and value={}", address,
-           value);
+  DEBUG_ONLY(LOG_DEBUG("Write single register with address={} and value={}",
+                       address, value));
   return process_write_single(modbus::function::write_single_register, address,
                               value);
 }
@@ -518,7 +543,7 @@ Modbus::Response Modbus::write_bits(const std::uint16_t& address,
         /** internal */ true};
   }
 
-  LOG_INFO("Write bits with address={}", address);
+  DEBUG_ONLY(LOG_DEBUG("Write bits with address={}", address));
 
   Buffer        request;
   std::uint16_t check = 0;
@@ -573,7 +598,7 @@ Modbus::Response Modbus::write_registers(const std::uint16_t& address,
         /** internal */ true};
   }
 
-  LOG_INFO("Write registers with address={}", address);
+  DEBUG_ONLY(LOG_DEBUG("Write registers with address={}", address));
 
   Buffer request;
 
@@ -603,7 +628,7 @@ Modbus::Response Modbus::write_registers(const std::uint16_t& address,
 Modbus::Response Modbus::mask_write_register(const std::uint16_t& address,
                                              const std::uint16_t& and_mask,
                                              const std::uint16_t& or_mask) {
-  LOG_INFO("Write mask register with address={}", address);
+  DEBUG_ONLY(LOG_DEBUG("Write mask register with address={}", address));
 
   Buffer       request;
   unsigned int request_length =
@@ -632,6 +657,17 @@ Modbus::Response Modbus::read_write_registers(
     const std::uint16_t& write_quantity,
     const std::uint16_t* value,
     const std::uint16_t& read_address,
+    const std::uint16_t& read_quantity) {
+  Buffer16 buffer;
+  return read_write_registers(write_address, write_quantity, value,
+                              read_address, read_quantity, buffer);
+}
+
+Modbus::Response Modbus::read_write_registers(
+    const std::uint16_t& write_address,
+    const std::uint16_t& write_quantity,
+    const std::uint16_t* value,
+    const std::uint16_t& read_address,
     const std::uint16_t& read_quantity,
     Buffer16&            buffer) {
   if (!check_quantity(write_quantity, MAX_RW_WRITE_REGISTERS)) {
@@ -650,10 +686,10 @@ Modbus::Response Modbus::read_write_registers(
         /** internal */ true};
   }
 
-  LOG_INFO(
+  DEBUG_ONLY(LOG_DEBUG(
       "Read and write register with write_address={}, write_quantity={}, "
       "read_address={}, read_quantity={}",
-      write_address, write_quantity, read_address, read_quantity);
+      write_address, write_quantity, read_address, read_quantity));
 
   Buffer       request;
   std::uint8_t byte_count = static_cast<std::uint8_t>(write_quantity * 2);

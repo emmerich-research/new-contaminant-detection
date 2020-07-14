@@ -63,6 +63,12 @@ class ConfigImpl : public StackObj {
    */
   bool debug() const;
   /**
+   * Get camera index to feed into OpenCV
+   *
+   * @return opencv camera index
+   */
+  int camera_idx() const;
+  /**
    * Get TOML Config
    *
    * @return config tree

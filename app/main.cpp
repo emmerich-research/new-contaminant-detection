@@ -28,11 +28,15 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     return ATM_ERR;
   }
 
-  cv::VideoCapture cap(0);
+  cv::VideoCapture cap{Config::get()->camera_idx(), cv::CAP_V4L2};
   if (!cap.isOpened()) {
     std::cout << "camera cannot be opened" << std::endl;
     return ATM_ERR;
   }
+
+  networking::modbus::Listener listener{config};
+
+  listener.start();
 
   ui_manager.key_callback([](gui::Manager::MainWindow* current_window, int key,
                              [[maybe_unused]] int scancode, int action,
@@ -60,7 +64,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
   gui::ImageWindow* image_window = new gui::ImageWindow("image", 300, 300);
   gui::ImageWindow* blob_window =
       new gui::ImageWindow("blob-detection", 300, 300);
-  // add window
+
+  // add windows
   ui_manager.add_window(image_window);
   ui_manager.add_window(blob_window);
   ui_manager.add_window<networking::modbus::ModbusWindow>(config);
@@ -71,15 +76,16 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
       frame.convertTo(frame, CV_8U, 1.0, 0);
 
       // show
-      image_window->frame(frame);
+      image_window->frame(&frame);
 
       blob_detector.detect(std::move(frame), std::move(blob));
-      blob_window->frame(blob);
+      blob_window->frame(&blob);
 
       ui_manager.render();
     }
   }
 
+  listener.stop();
   cap.release();
   ui_manager.exit();
 
