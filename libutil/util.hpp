@@ -25,6 +25,7 @@
 
 // 3. Local
 #include "array.hpp"
+#include "bit.hpp"
 #include "boolean.hpp"
 #include "filesystem.hpp"
 #include "macros.hpp"

@@ -24,6 +24,17 @@ struct from<ns(networking::modbus::Metadata)> {
     if (v.contains("length")) {
       metadata.length = find<std::uint16_t>(v, "length");
     }
+    metadata.type = ns(networking::modbus::DataType::BYTE);
+    if (v.contains("type")) {
+      auto type = find<std::string>(v, "type");
+      if ((type.compare("WORD") == 0) || (type.compare("word") == 0)) {
+        metadata.type = ns(networking::modbus::DataType::WORD);
+      } else if ((type.compare("DWORD") == 0) || (type.compare("dword") == 0)) {
+        metadata.type = ns(networking::modbus::DataType::DWORD);
+      } else if ((type.compare("LWORD") == 0) || (type.compare("lword") == 0)) {
+        metadata.type = ns(networking::modbus::DataType::LWORD);
+      }
+    }
     return metadata;
   }
 };
@@ -70,6 +81,14 @@ ModbusConfig::ModbusConfig(const impl::ConfigImpl* config)
   load();
 }
 
+void ModbusConfig::sort_table(ModbusConfig::Table& table) {
+  std::sort(table.begin(), table.end(),
+            [=](const ModbusConfig::TableEntry& a,
+                const ModbusConfig::TableEntry& b) {
+              return a.second.address < b.second.address;
+            });
+}
+
 void ModbusConfig::load() {
   load_master();
   timeout_ = base_config()->find<modbus::Timeout>("modbus", "timeout");
@@ -95,10 +114,9 @@ void ModbusConfig::load_data() {
   for (const auto& [k, v] :
        base_config()->find<toml::table>("modbus", "data")) {
     if (k != "type") {
-      state->data_table(k, -1);
+      state->data_table(k, 0);
       auto metadata =
           base_config()->find<modbus::Metadata>("modbus", "data", k);
-      // data_[k] = std::move(metadata);
       data_.push_back({k, metadata});
 
       if (min_data_address_ > metadata.address) {
@@ -113,11 +131,7 @@ void ModbusConfig::load_data() {
 
   data_length_ = max_data_address() - min_data_address() + 1;
 
-  std::sort(data().begin(), data().end(),
-            [=](const ModbusConfig::TableEntry& a,
-                const ModbusConfig::TableEntry& b) {
-              return a.second.address < b.second.address;
-            });
+  sort_table(data());
 }
 
 void ModbusConfig::load_plc_jetson_comm() {
@@ -148,11 +162,7 @@ void ModbusConfig::load_plc_jetson_comm() {
   plc_jetson_comm_length_ =
       max_plc_jetson_comm_address() - min_plc_jetson_comm_address() + 1;
 
-  std::sort(plc_jetson_comm().begin(), plc_jetson_comm().end(),
-            [=](const ModbusConfig::TableEntry& a,
-                const ModbusConfig::TableEntry& b) {
-              return a.second.address < b.second.address;
-            });
+  sort_table(plc_jetson_comm());
 }
 
 void ModbusConfig::load_jetson_plc_comm() {
@@ -169,7 +179,6 @@ void ModbusConfig::load_jetson_plc_comm() {
       auto metadata = base_config()->find<modbus::Metadata>(
           "modbus", "communication", "jetson-plc", k);
 
-      // jetson_plc_comm_[k] = std::move(metadata);
       jetson_plc_comm_.push_back({k, metadata});
 
       if (min_jetson_plc_comm_address_ > metadata.address) {
@@ -185,11 +194,7 @@ void ModbusConfig::load_jetson_plc_comm() {
   jetson_plc_comm_length_ =
       max_jetson_plc_comm_address() - min_jetson_plc_comm_address() + 1;
 
-  std::sort(jetson_plc_comm().begin(), jetson_plc_comm().end(),
-            [=](const ModbusConfig::TableEntry& a,
-                const ModbusConfig::TableEntry& b) {
-              return a.second.address < b.second.address;
-            });
+  sort_table(jetson_plc_comm());
 }
 
 const modbus::Metadata& ModbusConfig::data(const std::string& id) const {
@@ -198,7 +203,6 @@ const modbus::Metadata& ModbusConfig::data(const std::string& id) const {
                            return entry.first == id;
                          });
   return (*it).second;
-  // return data_.at(id);
 }
 
 const modbus::Metadata& ModbusConfig::plc_jetson_comm(
@@ -208,7 +212,6 @@ const modbus::Metadata& ModbusConfig::plc_jetson_comm(
                            return entry.first == id;
                          });
   return (*it).second;
-  // return plc_jetson_comm_.at(id);
 }
 
 const modbus::Metadata& ModbusConfig::jetson_plc_comm(
@@ -217,7 +220,6 @@ const modbus::Metadata& ModbusConfig::jetson_plc_comm(
       jetson_plc_comm().begin(), jetson_plc_comm().end(),
       [=](const ModbusConfig::TableEntry& entry) { return entry.first == id; });
   return (*it).second;
-  // return jetson_plc_comm_.at(id);
 }
 }  // namespace networking
 

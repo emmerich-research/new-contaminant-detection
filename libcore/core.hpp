@@ -50,6 +50,7 @@
 #include "allocation.inline.hpp"
 
 #include "config.hpp"
+#include "listener.hpp"
 #include "logger.hpp"
 #include "state.hpp"
 

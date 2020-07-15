@@ -33,7 +33,6 @@ void ModbusWindow::show() {
   ImGuiIO& io = ImGui::GetIO();
 
   float total_w = ImGui::GetContentRegionAvail().x;
-  float font_size = io.FontDefault->FontSize;
 
   {
     ImGui::Text("Image Data");
@@ -49,7 +48,7 @@ void ModbusWindow::show() {
       ImGui::SameLine();
       // ImGui::SameLine(total_w - 20 - value_str.length() * font_size);
       // ImGui::SetNextItemWidth(total_w - 20 - value_str.length() * font_size);
-      ImGui::TextColored(data_color, "%d", value);
+      ImGui::TextColored(data_color, "%u", value);
     }
 
     ImGui::Separator();

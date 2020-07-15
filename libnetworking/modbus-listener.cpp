@@ -13,38 +13,37 @@
 NAMESPACE_BEGIN
 
 namespace networking {
-namespace modbus {
-Listener::Listener(const ModbusConfig& config, bool autorun)
+ModbusListener::ModbusListener(const ModbusConfig& config, bool autorun)
     : config_{std::move(config)}, running_{false} {
   const auto& timeout = config.timeout();
 
   modbus_ = new modbus::TCP(config.host().c_str(), config.port(),
                             timeout.connect, timeout.request, timeout.response);
   modbus()->error_callback(
-      std::bind(&Listener::error_callback, this, std::placeholders::_1));
-  modbus()->response_callback(
-      std::bind(&Listener::response_callback, this, std::placeholders::_1));
+      std::bind(&ModbusListener::error_callback, this, std::placeholders::_1));
+  modbus()->response_callback(std::bind(&ModbusListener::response_callback,
+                                        this, std::placeholders::_1));
 
   if (autorun) {
     start();
   }
 }
 
-Listener::~Listener() {
+ModbusListener::~ModbusListener() {
   delete modbus();
 }
 
-void Listener::start() {
+void ModbusListener::start() {
   std::lock_guard<std::mutex> lock(mutex());
   if (!running()) {
     LOG_INFO("Starting modbus listener");
     running_ = true;
-    thread_ = std::thread(&Listener::execute, this);
+    thread_ = std::thread(&ModbusListener::execute, this);
     // cv().notify_one();
   }
 }
 
-void Listener::stop() {
+void ModbusListener::stop() {
   std::lock_guard<std::mutex> lock(mutex());
   if (running()) {
     LOG_INFO("Stopping modbus listener");
@@ -54,19 +53,30 @@ void Listener::stop() {
   }
 }
 
-void Listener::response_callback(const ModbusResponse& response) {
+void ModbusListener::response_callback(const ModbusResponse& response) {
   massert(State::get() != nullptr, "sanity");
 
-  auto*       state = State::get();
-  std::size_t skip = 0;
+  auto*        state = State::get();
+  unsigned int skip = 0;
 
   if (response.function == modbus::function::read_input_registers) {
     // data
     if (auto value = std::get_if<Modbus::Buffer16>(&response.data)) {
       const auto& buffer = *value;
       for (const auto& [key, metadata] : config().data()) {
-        state->data_table(key, buffer[skip]);
-        skip += metadata.length;
+        const auto& type = metadata.type;
+
+        if (type == modbus::DataType::BYTE || type == modbus::DataType::WORD) {
+          state->data_table(key, buffer[skip]);
+        } else if (type == modbus::DataType::DWORD) {
+          state->data_table(
+              key,
+              util::convert_bits<std::uint16_t, std::uint32_t>(buffer, skip));
+        } else if (type == modbus::DataType::LWORD) {
+          state->data_table(key, buffer[skip]);
+        }
+
+        skip += util::to_underlying(type);
       }
     }
   } else if (response.function == modbus::function::read_discrete_inputs) {
@@ -75,18 +85,18 @@ void Listener::response_callback(const ModbusResponse& response) {
       const auto& buffer = *value;
       for (const auto& [key, metadata] : config().plc_jetson_comm()) {
         state->status_table(key, buffer[skip] == 0 ? false : true);
-        skip += metadata.length;
+        skip += 1;
       }
     }
   }
 }
 
-void Listener::error_callback(const ModbusError& error) {
+void ModbusListener::error_callback(const ModbusError& error) {
   LOG_ERROR("Failed to get response, exception: {}, internal: {}, message: {}",
             error.exception, error.internal, error.error);
 }
 
-void Listener::execute() {
+void ModbusListener::execute() {
   massert(State::get() != nullptr, "sanity");
 
   Modbus::ErrorCode ec;
@@ -117,7 +127,7 @@ void Listener::execute() {
                               config().plc_jetson_comm_length());
 
     // sleep for 1s
-    sleep_for<time_units::seconds>(5);
+    sleep_for<time_units::seconds>(1);
   }
 
   trial = 0;
@@ -131,7 +141,6 @@ void Listener::execute() {
     trial++;
   }
 }
-}  // namespace modbus
 }  // namespace networking
 
 NAMESPACE_END

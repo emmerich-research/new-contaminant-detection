@@ -20,14 +20,13 @@
 NAMESPACE_BEGIN
 
 namespace networking {
-namespace modbus {
-class Listener : public StackObj {
+class ModbusListener : public Listener {
  public:
-  Listener(const ModbusConfig& config, bool autorun = false);
-  virtual ~Listener();
+  ModbusListener(const ModbusConfig& config, bool autorun = false);
+  virtual ~ModbusListener() override;
 
-  void start();
-  void stop();
+  virtual void start() override;
+  virtual void stop() override;
 
   inline const Modbus* modbus() const { return modbus_; }
   inline Modbus*       modbus() { return modbus_; }
@@ -60,7 +59,6 @@ class Listener : public StackObj {
   std::thread thread_;
   // std::condition_variable cv_;
 };
-}  // namespace modbus
 }  // namespace networking
 
 NAMESPACE_END

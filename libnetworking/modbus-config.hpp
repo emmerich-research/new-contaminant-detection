@@ -21,10 +21,10 @@ NAMESPACE_BEGIN
 
 namespace networking {
 namespace modbus {
-// enum class type { coil, input_coil, holding_register, input_register };
+enum class DataType : unsigned int { BYTE = 0, WORD, DWORD, LWORD };
 
 struct Metadata {
-  // std::string   type;
+  DataType      type;
   std::uint16_t address;
   std::uint16_t length;
 };
@@ -103,6 +103,8 @@ class ModbusConfig {
   inline Table& data() { return data_; };
   inline Table& plc_jetson_comm() { return plc_jetson_comm_; };
   inline Table& jetson_plc_comm() { return jetson_plc_comm_; };
+
+  static void sort_table(Table& table);
 
  private:
   const impl::ConfigImpl* base_config_;

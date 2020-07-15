@@ -26,71 +26,88 @@ type                         = "input-coil"
 
 [modbus.communication.plc-jetson.imaging-request]
 address                      = 289
+type                         = "byte"
 
 [modbus.communication.jetson-plc]
 type                         = "coil"
 
 [modbus.communication.jetson-plc.imaging-done]
 address                      = 1
+type                         = "byte"
 
 [modbus.communication.jetson-plc.imaging-ready]
 address                      = 2
+type                         = "byte"
 
 [modbus.data]
 type                         = "input-register"
 
 [modbus.data.year]
 address                      = 1
+type                         = "word"
 length                       = 1
 
 [modbus.data.month]
 address                      = 2
+type                         = "word"
 length                       = 1
 
 [modbus.data.day]
 address                      = 3
+type                         = "word"
 length                       = 1
 
 [modbus.data.hour]
 address                      = 4
+type                         = "word"
 length                       = 1
 
 [modbus.data.minute]
 address                      = 5
+type                         = "word"
 length                       = 1
 
 [modbus.data.second]
 address                      = 6
+type                         = "word"
 length                       = 1
 
 [modbus.data.sku-card-instruction]
 address                      = 7
+type                         = "word"
 length                       = 1
 
 [modbus.data.sku-number]
 address                      = 8
+type                         = "word"
 length                       = 1
 
 [modbus.data.sku-production-day]
 address                      = 9
+type                         = "word"
 length                       = 1
 
 [modbus.data.heartbit]
 address                      = 10
+type                         = "word"
 length                       = 1
 
 [modbus.data.tray-barcode]
 address                      = 11
+type                         = "dword"
 length                       = 2
 
 [modbus.data.lid-barcode]
 address                      = 13
+type                         = "dword"
 length                       = 2
 
 [modbus.data.batch-id]
 address                      = 15
+type                         = "dword"
 length                       = 2
 
 [modbus.data.infection-id]
 address                      = 17
+type                         = "dword"
 length                       = 2

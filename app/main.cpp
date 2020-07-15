@@ -34,9 +34,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     return ATM_ERR;
   }
 
-  networking::modbus::Listener listener{config};
-
-  listener.start();
+  networking::ModbusListener listener{config, /** autorun */ true};
 
   ui_manager.key_callback([](gui::Manager::MainWindow* current_window, int key,
                              [[maybe_unused]] int scancode, int action,
@@ -48,15 +46,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     }
   });
 
-  ImGuiWindowFlags window_flags = 0;
-  // window_flags |= ImGuiWindowFlags_NoTitleBar;
-  // window_flags |= ImGuiWindowFlags_NoScrollbar;
-  // window_flags |= ImGuiWindowFlags_NoMove;
-  // window_flags |= ImGuiWindowFlags_NoResize;
-  window_flags |= ImGuiWindowFlags_NoCollapse;
-  // window_flags |= ImGuiWindowFlags_NoNav;
-  window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
-  window_flags |= ImGuiWindowFlags_AlwaysAutoResize;
+  ui_manager.error_callback([](int error, const char* description) {
+    LOG_ERROR("Glfw Error {}: {}", error, description);
+  });
 
   detector::BlobDetector blob_detector;
 
