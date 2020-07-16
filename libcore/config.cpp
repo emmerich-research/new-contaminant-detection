@@ -38,6 +38,23 @@ int ConfigImpl::camera_idx() const {
 
   return 0;  // default to zero (default camera)
 }
+
+std::string ConfigImpl::images_dir() const {
+  if (config().contains("image") &&
+      config().at("image").contains("directory")) {
+    return find<std::string>("image", "directory");
+  }
+
+  return "images";  // default to "images"
+}
+
+std::string ConfigImpl::images_db() const {
+  if (config().contains("image") && config().at("image").contains("database")) {
+    return find<std::string>("image", "database");
+  }
+
+  return "contaminants.db";  // default to "contaminants.db"
+}
 }  // namespace impl
 
 NAMESPACE_END

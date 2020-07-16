@@ -87,6 +87,7 @@ set(WITH_GTK OFF CACHE BOOL "" FORCE)
 set(WITH_QT  OFF CACHE BOOL "" FORCE)
 
 # OpenGL
+set(OpenGL_GL_PREFERENCE "GLVND")
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
 
@@ -95,13 +96,20 @@ set(IMGUI_VERSION 1.77)
 set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/external/imgui")
 find_package(ImGui ${IMGUI_VERSION} REQUIRED)
 
+# SQLite
+find_package(SQLite3 REQUIRED)
+include(SqliteORM)
 
-if (Boost_FOUND)
+if (Boost_FOUND
+    AND SQLite3_FOUND
+    AND OpenCV_FOUND
+    AND IMGUI_FOUND)
   add_subdirectory(libutil)
   add_subdirectory(libcore)
   add_subdirectory(libnetworking)
   add_subdirectory(libdetector)
   add_subdirectory(libgui)
+  add_subdirectory(libstorage)
   add_subdirectory(driver)
   add_subdirectory(app)
 endif()

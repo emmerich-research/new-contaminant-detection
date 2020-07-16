@@ -16,7 +16,8 @@ target_link_libraries(app PRIVATE
   "${PROJECT_NAMESPACE}::core"
   "${PROJECT_NAMESPACE}::networking"
   "${PROJECT_NAMESPACE}::detector"
-  "${PROJECT_NAMESPACE}::gui")
+  "${PROJECT_NAMESPACE}::gui"
+  "${PROJECT_NAMESPACE}::storage")
 
 target_set_warnings(app
   ENABLE ALL

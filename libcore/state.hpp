@@ -51,19 +51,7 @@ class StateImpl : public StackObj {
   using StatusTable = std::unordered_map<std::string, bool>;
   using DataTable = std::unordered_map<std::string, unsigned int>;
 
- private:
-  /**
-   * StateImpl Constructor
-   *
-   * @todo implemented soon
-   */
-  explicit StateImpl();
-  /**
-   * StateImpl Destructor
-   *
-   * Noop
-   */
-  ~StateImpl();
+ public:
   /**
    * Get status table
    */
@@ -102,14 +90,22 @@ class StateImpl : public StackObj {
    * @param value new data value for specific id
    */
   void data_table(const std::string& id, unsigned int value);
-
- private:
   /**
    * Get mutex
    *
    * @return state mutex
    */
   StateMutex& mutex();
+
+ private:
+  /**
+   * StateImpl Constructor
+   */
+  explicit StateImpl();
+  /**
+   * StateImpl Destructor
+   */
+  ~StateImpl();
 
  private:
   /**

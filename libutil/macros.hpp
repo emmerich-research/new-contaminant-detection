@@ -27,7 +27,7 @@
 #ifdef PROJECT_DEBUG
 #define DEBUG_ONLY(code) \
   do {                   \
-    code                 \
+    code;                \
   } while (0)
 #define NOT_DEBUG(code) static_cast<void>(0)
 #define massert(Expr, Msg) _massert(#Expr, Expr, __FILE__, __LINE__, Msg)
@@ -35,7 +35,7 @@
 #define DEBUG_ONLY(code) static_cast<void>(0)
 #define NOT_DEBUG(code) \
   do {                  \
-    code                \
+    code;               \
   } while (0)
 #define massert(Expr, Msg) static_cast<void>(0)
 #endif

@@ -69,6 +69,18 @@ class ConfigImpl : public StackObj {
    */
   int camera_idx() const;
   /**
+   * Get image dir path
+   *
+   * @return images dir path
+   */
+  std::string images_dir() const;
+  /**
+   * Get image database path
+   *
+   * @return image database path
+   */
+  std::string images_db() const;
+  /**
    * Get TOML Config
    *
    * @return config tree

@@ -7,9 +7,7 @@
  * Modbus listener Implementation
  */
 
-#include <condition_variable>
 #include <cstdint>
-#include <thread>
 
 #include <libcore/core.hpp>
 
@@ -22,7 +20,10 @@ NAMESPACE_BEGIN
 namespace networking {
 class ModbusListener : public Listener {
  public:
-  ModbusListener(const ModbusConfig& config, bool autorun = false);
+  ModbusListener(const ModbusConfig* config, bool autorun = false);
+  ModbusListener(const ModbusConfig* config,
+                 Modbus*             modbus,
+                 bool                autorun = false);
   virtual ~ModbusListener() override;
 
   virtual void start() override;
@@ -32,18 +33,9 @@ class ModbusListener : public Listener {
   inline Modbus*       modbus() { return modbus_; }
 
  private:
-  inline const ModbusConfig& config() const { return config_; }
+  inline const ModbusConfig* config() const { return config_; }
 
-  // inline const std::condition_variable& cv() const { return cv_; }
-  // inline std::condition_variable&       cv() { return cv_; }
-
-  inline const std::thread& thread() const { return thread_; }
-  inline std::thread&       thread() { return thread_; }
-
-  inline const bool& running() const { return running_; }
-
-  inline const std::mutex& mutex() const { return mutex_; }
-  inline std::mutex&       mutex() { return mutex_; }
+  inline bool modbus_allocation() const { return modbus_allocation_; }
 
   void error_callback(const ModbusError& error);
   void response_callback(const ModbusResponse& response);
@@ -51,13 +43,9 @@ class ModbusListener : public Listener {
   void execute();
 
  private:
-  const ModbusConfig config_;
-  bool               running_;
+  const ModbusConfig* config_;
   Modbus*            modbus_;
-
-  std::mutex  mutex_;
-  std::thread thread_;
-  // std::condition_variable cv_;
+  const bool         modbus_allocation_;
 };
 }  // namespace networking
 
