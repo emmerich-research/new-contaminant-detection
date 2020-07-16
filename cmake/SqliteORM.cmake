@@ -1,0 +1,3 @@
+set(SQLITE_ORM_ENABLE_CXX_17   ON  CACHE BOOL "" FORCE)
+set(BUILD_TESTING              OFF CACHE BOOL "" FORCE)
+add_subdirectory(${PROJECT_SOURCE_DIR}/external/sqlite_orm EXCLUDE_FROM_ALL)

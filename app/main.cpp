@@ -9,16 +9,48 @@
 #include <libdetector/detector.hpp>
 #include <libgui/gui.hpp>
 #include <libnetworking/networking.hpp>
+#include <libstorage/storage.hpp>
 #include <libutil/util.hpp>
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
   USE_NAMESPACE
 
   if (initialize_core()) {
+    std::cerr << "cannot initialize config, state, and logger!" << std::endl;
+    return ATM_ERR;
+  }
+
+  cv::VideoCapture cap{Config::get()->camera_idx(), cv::CAP_V4L2};
+  if (!cap.isOpened()) {
+    LOG_ERROR("Camera cannot be opened!");
     return ATM_ERR;
   }
 
   networking::ModbusConfig config{Config::get()};
+  const auto&              timeout = config.timeout();
+
+  networking::Modbus::ErrorCode ec;
+  networking::modbus::TCP       modbus{config.host().c_str(), config.port(),
+                                 timeout.connect, timeout.request,
+                                 timeout.response};
+
+  ec = modbus.connect();
+
+  if (ec) {
+    LOG_ERROR("Connection error, message: {}", ec.message());
+    return ATM_ERR;
+  }
+
+  cv::Mat                  frame, blob;
+  storage::StorageListener storage_listener{
+      reinterpret_cast<const networking::ModbusConfig*>(&config), &modbus,
+      reinterpret_cast<const cv::Mat*>(&frame),
+      /** autorun */ true};
+  networking::ModbusListener modbus_listener{
+      reinterpret_cast<const networking::ModbusConfig*>(&config), &modbus,
+      /** autorun */ true};
+
+  detector::BlobDetector blob_detector;
 
   gui::Manager ui_manager;
 
@@ -27,14 +59,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
   if (!ui_manager.active()) {
     return ATM_ERR;
   }
-
-  cv::VideoCapture cap{Config::get()->camera_idx(), cv::CAP_V4L2};
-  if (!cap.isOpened()) {
-    std::cout << "camera cannot be opened" << std::endl;
-    return ATM_ERR;
-  }
-
-  networking::ModbusListener listener{config, /** autorun */ true};
 
   ui_manager.key_callback([](gui::Manager::MainWindow* current_window, int key,
                              [[maybe_unused]] int scancode, int action,
@@ -50,8 +74,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     LOG_ERROR("Glfw Error {}: {}", error, description);
   });
 
-  detector::BlobDetector blob_detector;
-
   // create windows
   gui::ImageWindow* image_window = new gui::ImageWindow("image", 300, 300);
   gui::ImageWindow* blob_window =
@@ -63,7 +85,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
   ui_manager.add_window<networking::modbus::ModbusWindow>(config);
 
   while (ui_manager.handle_events()) {
-    cv::Mat frame, blob;
     if (cap.read(frame)) {
       frame.convertTo(frame, CV_8U, 1.0, 0);
 
@@ -77,7 +98,15 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     }
   }
 
-  listener.stop();
+  storage_listener.stop();
+  modbus_listener.stop();
+
+  ec = modbus.close();
+
+  if (ec) {
+    LOG_ERROR("Cannot close connection to Modbus!");
+  }
+
   cap.release();
   ui_manager.exit();
 

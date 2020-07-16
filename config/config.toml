@@ -6,6 +6,10 @@
 name                         = "Emmerich Contaminants Detection"
 debug                        = true # will log all debugging things
 
+[image]
+database                     = "contaminants.db"
+directory                    = "images"
+
 [camera]
 index                        = 0
 

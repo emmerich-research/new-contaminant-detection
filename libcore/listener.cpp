@@ -4,7 +4,7 @@
 
 NAMESPACE_BEGIN
 
-Listener::Listener() {}
+Listener::Listener() : running_{false} {}
 
 Listener::~Listener() {}
 

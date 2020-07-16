@@ -29,8 +29,8 @@ ModbusWindow::~ModbusWindow() {}
 void ModbusWindow::show() {
   massert(State::get() != nullptr, "sanity");
 
-  auto*    state = State::get();
-  ImGuiIO& io = ImGui::GetIO();
+  auto* state = State::get();
+  // ImGuiIO& io = ImGui::GetIO();
 
   float total_w = ImGui::GetContentRegionAvail().x;
 
