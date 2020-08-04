@@ -34,11 +34,12 @@
 
 // #include <boost/date_time/posix_time/posix_time_types.hpp>
 
-#include <boost/asio.hpp>
+#include <boost/asio/bind_executor.hpp>
 #include <boost/asio/connect.hpp>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/read_until.hpp>
+#include <boost/asio/read.hpp>
+#include <boost/asio/strand.hpp>
 #include <boost/asio/streambuf.hpp>
 #include <boost/asio/write.hpp>
 

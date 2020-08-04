@@ -41,7 +41,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     return ATM_ERR;
   }
 
-  cv::Mat                  frame, blob;
+  cv::Mat                  frame;
+  cv::Mat                  blob;
   storage::StorageListener storage_listener{
       reinterpret_cast<const networking::ModbusConfig*>(&config), &modbus,
       reinterpret_cast<const cv::Mat*>(&frame),
@@ -50,7 +51,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
       reinterpret_cast<const networking::ModbusConfig*>(&config), &modbus,
       /** autorun */ true};
 
-  detector::BlobDetector blob_detector;
+  // detector::BlobDetector blob_detector;
 
   gui::Manager ui_manager;
 
@@ -76,12 +77,12 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
 
   // create windows
   gui::ImageWindow* image_window = new gui::ImageWindow("image", 300, 300);
-  gui::ImageWindow* blob_window =
-      new gui::ImageWindow("blob-detection", 300, 300);
+  // gui::ImageWindow* blob_window =
+  //     new gui::ImageWindow("blob-detection", 300, 300);
 
   // add windows
   ui_manager.add_window(image_window);
-  ui_manager.add_window(blob_window);
+  // ui_manager.add_window(blob_window);
   ui_manager.add_window<networking::modbus::ModbusWindow>(config);
 
   while (ui_manager.handle_events()) {
@@ -91,8 +92,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
       // show
       image_window->frame(&frame);
 
-      blob_detector.detect(std::move(frame), std::move(blob));
-      blob_window->frame(&blob);
+      // blob_detector.detect(std::move(frame), std::move(blob));
+      // blob_window->frame(&blob);
 
       ui_manager.render();
     }

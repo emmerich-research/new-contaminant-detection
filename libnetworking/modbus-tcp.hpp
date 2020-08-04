@@ -10,8 +10,9 @@
 #include <cstdint>
 #include <memory>
 
-#include <boost/asio.hpp>
+#include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/strand.hpp>
 
 #include <libcore/core.hpp>
 
@@ -176,6 +177,23 @@ class TCP : public Modbus, std::enable_shared_from_this<TCP> {
    */
   inline const boost::asio::ip::tcp::socket& socket() const { return socket_; }
   /**
+   * Get Boost Asio strand
+   *
+   * @return strand
+   */
+  inline boost::asio::strand<boost::asio::io_context::executor_type>& strand() {
+    return strand_;
+  }
+  /**
+   * Get Boost Asio strand (const)
+   *
+   * @return strand (const)
+   */
+  inline const boost::asio::strand<boost::asio::io_context::executor_type>&
+  strand() const {
+    return strand_;
+  }
+  /**
    * Send request to server
    *
    * Will incorporate timeout
@@ -259,6 +277,10 @@ class TCP : public Modbus, std::enable_shared_from_this<TCP> {
    * Boost Asio TCP socket
    */
   boost::asio::ip::tcp::socket socket_;
+  /**
+   * Boost Asio strand
+   */
+  boost::asio::strand<boost::asio::io_context::executor_type> strand_;
 };
 }  // namespace modbus
 }  // namespace networking

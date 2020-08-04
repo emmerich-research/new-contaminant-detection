@@ -9,10 +9,9 @@
 
 #include <boost/lambda/lambda.hpp>
 
+#include <boost/asio/bind_executor.hpp>
 #include <boost/asio/connect.hpp>
-#include <boost/asio/io_service.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/read_until.hpp>
+#include <boost/asio/read.hpp>
 #include <boost/asio/streambuf.hpp>
 #include <boost/asio/write.hpp>
 
@@ -45,7 +44,8 @@ TCP::TCP(const std::string&     host,
       host_{host},
       port_{port},
       io_context_{},
-      socket_{io_context_} {}
+      socket_{io_context_},
+      strand_{boost::asio::make_strand(io_context_)} {}
 
 TCP::TCP(const std::string&     host,
          const std::uint16_t&   port,
@@ -66,7 +66,8 @@ Modbus::ErrorCode TCP::connect() {
   boost::asio::async_connect(
       socket(),
       boost::asio::ip::tcp::resolver{io_context()}.resolve(host(), port()),
-      boost::lambda::var(ec) = boost::lambda::_1);
+      boost::asio::bind_executor(strand(),
+                                 boost::lambda::var(ec) = boost::lambda::_1));
 
   // wait until timeout
   run_task(connect_timeout(), ec);
@@ -158,8 +159,10 @@ void TCP::send_request(Modbus::Buffer&    request,
   DEBUG_ONLY(LOG_DEBUG("Sending data to Modbus Server hostname={}, port={}",
                        host(), port()));
 
-  boost::asio::async_write(socket(), boost::asio::buffer(request, length),
-                           boost::lambda::var(ec) = boost::lambda::_1);
+  boost::asio::async_write(
+      socket(), boost::asio::buffer(request, length),
+      boost::asio::bind_executor(strand(),
+                                 boost::lambda::var(ec) = boost::lambda::_1));
 
   run_task(request_timeout(), ec);
 
@@ -191,10 +194,12 @@ void TCP::get_response(Modbus::Buffer&    response,
     boost::asio::async_read(
         socket(), boost::asio::buffer(buffer + response_length),
         boost::asio::transfer_exactly(length_to_receive),
-        std::bind(&TCP::handle_get_response, this, std::placeholders::_1,
-                  std::placeholders::_2, std::ref(response), std::ref(phase),
-                  std::ref(response_length), std::ref(length_to_receive),
-                  std::ref(ec)));
+        boost::asio::bind_executor(
+            strand(),
+            std::bind(&TCP::handle_get_response, this, std::placeholders::_1,
+                      std::placeholders::_2, std::ref(response),
+                      std::ref(phase), std::ref(response_length),
+                      std::ref(length_to_receive), std::ref(ec))));
 
     run_task(response_timeout(), ec);
 
