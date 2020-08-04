@@ -43,6 +43,10 @@ type                         = "byte"
 address                      = 2
 type                         = "byte"
 
+[modbus.communication.jetson-plc.heartbeat]
+address                      = 3
+type                         = "byte"
+
 [modbus.data]
 type                         = "input-register"
 
