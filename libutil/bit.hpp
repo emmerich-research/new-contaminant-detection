@@ -28,23 +28,41 @@ template <typename From,
                                       std::is_integral_v<To>>>
 static void convert_bits(From*               buffer,
                          const From&         value,
-                         const unsigned int& start_addr = 0) {
+                         const unsigned int& start_addr = 0,
+                         bool                reverse = false) {
   if constexpr (std::is_same_v<From, std::uint16_t>) {
     if constexpr (std::is_same_v<To, std::uint8_t>) {
-      buffer[start_addr] = value >> 8;
-      buffer[start_addr + 1] = value & 0x00FF;
+      if (reverse) {
+        buffer[start_addr + 1] = value >> 8;
+        buffer[start_addr] = value & 0x00FF;
+      } else {
+        buffer[start_addr] = value >> 8;
+        buffer[start_addr + 1] = value & 0x00FF;
+      }
     }
   } else if constexpr (std::is_same_v<From, std::uint32_t>) {
     if constexpr (std::is_same_v<To, std::uint16_t>) {
-      buffer[start_addr] = value >> 16;
-      buffer[start_addr + 1] = value;
+      if (reverse) {
+        buffer[start_addr + 1] = value >> 16;
+        buffer[start_addr] = value; 
+      } else {
+        buffer[start_addr] = value >> 16;
+        buffer[start_addr + 1] = value;
+      }                       
     }
   } else if constexpr (std::is_same_v<From, std::uint64_t>) {
     if constexpr (std::is_same_v<To, std::uint16_t>) {
-      buffer[start_addr] = value >> 48;
-      buffer[start_addr + 1] = value >> 32;
-      buffer[start_addr + 2] = value >> 16;
-      buffer[start_addr + 3] = value;
+      if (reverse) {
+        buffer[start_addr + 3] = value >> 48;
+        buffer[start_addr + 2] = value >> 32;
+        buffer[start_addr + 1] = value >> 16;
+        buffer[start_addr] = value; 
+      } else {
+        buffer[start_addr] = value >> 48;
+        buffer[start_addr + 1] = value >> 32;
+        buffer[start_addr + 2] = value >> 16;
+        buffer[start_addr + 3] = value; 
+      }
     }
   }
 }
@@ -66,26 +84,44 @@ template <typename From,
                                       std::is_integral_v<To>>>
 static void convert_bits(std::array<From, Size>& buffer,
                          const From&             value,
-                         const unsigned int&     start_addr = 0) {
+                         const unsigned int&     start_addr = 0,
+                         bool reverse = false) {
   massert(start_addr < buffer.max_size(), "sanity");
 
   if constexpr (std::is_same_v<From, std::uint16_t>) {
     if constexpr (std::is_same_v<To, std::uint8_t>) {
-      buffer[start_addr] = value >> 8;
-      buffer[start_addr + 1] = value & 0x00FF;
+      if (reverse) {
+        buffer[start_addr + 1] = value >> 8;
+        buffer[start_addr] = value & 0x00FF;  
+      } else {
+        buffer[start_addr] = value >> 8;
+        buffer[start_addr + 1] = value & 0x00FF;  
+      }
     }
   } else if constexpr (std::is_same_v<From, std::uint32_t>) {
     if constexpr (std::is_same_v<To, std::uint16_t>) {
-      buffer[start_addr] = value >> 16;
-      buffer[start_addr + 1] = value;
+      if (reverse) {
+        buffer[start_addr + 1] = value >> 16;
+        buffer[start_addr] = value;
+      } else {
+        buffer[start_addr] = value >> 16;
+        buffer[start_addr + 1] = value;
+      }
     }
   } else if constexpr (std::is_same_v<From, std::uint64_t>) {
     if constexpr (std::is_same_v<To, std::uint16_t>) {
       static_assert(start_addr + 3 < Size, "size is bigger than expected size");
-      buffer[start_addr] = value >> 48;
-      buffer[start_addr + 1] = value >> 32;
-      buffer[start_addr + 2] = value >> 16;
-      buffer[start_addr + 3] = value;
+      if (reverse) {
+        buffer[start_addr + 3] = value >> 48;
+        buffer[start_addr + 2] = value >> 32;
+        buffer[start_addr + 1] = value >> 16;
+        buffer[start_addr] = value;
+      } else {
+        buffer[start_addr] = value >> 48;
+        buffer[start_addr + 1] = value >> 32;
+        buffer[start_addr + 2] = value >> 16;
+        buffer[start_addr + 3] = value;
+      }
     }
   }
 }
@@ -105,18 +141,28 @@ template <typename From,
           typename To,
           typename = std::enable_if_t<std::is_integral_v<From> &&
                                       std::is_integral_v<To>>>
-static To convert_bits(const From* buffer, const unsigned int& start_addr = 0) {
+static To convert_bits(const From* buffer, const unsigned int& start_addr = 0, bool reverse = false) {
   if constexpr (std::is_same_v<From, std::uint16_t>) {
     if constexpr (std::is_same_v<To, std::uint32_t>) {
       return static_cast<To>(buffer[start_addr] << 16) | buffer[start_addr + 1];
     } else if constexpr (std::is_same_v<To, std::uint64_t>) {
-      return static_cast<To>(
+      if (reverse) {
+        return static_cast<To>(
+          (buffer[start_addr + 3] << 48) | (buffer[start_addr + 2] << 32) |
+          (buffer[start_addr + 1] << 16) | buffer[start_addr]);   
+      } else {
+        return static_cast<To>(
           (buffer[start_addr] << 48) | (buffer[start_addr + 1] << 32) |
           (buffer[start_addr + 2] << 16) | buffer[start_addr + 3]);
+      }
     }
   } else if constexpr (std::is_same_v<From, std::uint8_t>) {
     if constexpr (std::is_same_v<To, std::uint16_t>) {
-      return static_cast<To>(buffer[start_addr] << 8) | buffer[start_addr + 1];
+      if (reverse) {
+        return static_cast<To>(buffer[start_addr + 1] << 8) | buffer[start_addr];
+      } else {
+        return static_cast<To>(buffer[start_addr] << 8) | buffer[start_addr + 1];
+      }
     }
   }
 
@@ -141,19 +187,30 @@ template <typename From,
           typename = std::enable_if_t<std::is_integral_v<From> &&
                                       std::is_integral_v<To>>>
 static To convert_bits(const std::array<From, Size>& buffer,
-                       const unsigned int&           start_addr = 0) {
+                       const unsigned int&           start_addr = 0,
+                       bool reverse = false) {
   massert(start_addr < buffer.max_size(), "sanity");
   if constexpr (std::is_same_v<From, std::uint16_t>) {
     if constexpr (std::is_same_v<To, std::uint32_t>) {
       return static_cast<To>(buffer[start_addr] << 16) | buffer[start_addr + 1];
     } else if constexpr (std::is_same_v<To, std::uint64_t>) {
-      return static_cast<To>(
+      if (reverse) {
+        return static_cast<To>(
+          (buffer[start_addr + 3] << 48) | (buffer[start_addr + 2] << 32) |
+          (buffer[start_addr + 1] << 16) | buffer[start_addr]);
+      } else {
+        return static_cast<To>(
           (buffer[start_addr] << 48) | (buffer[start_addr + 1] << 32) |
-          (buffer[start_addr + 2] << 16) | buffer[start_addr + 3]);
+          (buffer[start_addr + 2] << 16) | buffer[start_addr + 3]); 
+      }
     }
   } else if constexpr (std::is_same_v<From, std::uint8_t>) {
     if constexpr (std::is_same_v<To, std::uint16_t>) {
-      return static_cast<To>(buffer[start_addr] << 8) | buffer[start_addr + 1];
+      if (reverse) {
+        return static_cast<To>(buffer[start_addr + 1] << 8) | buffer[start_addr];
+      } else {
+        return static_cast<To>(buffer[start_addr] << 8) | buffer[start_addr + 1];
+      }
     }
   }
 

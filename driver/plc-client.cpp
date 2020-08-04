@@ -56,9 +56,11 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
               type == modbus::DataType::WORD) {
             state->data_table(key, buffer[skip]);
           } else if (type == modbus::DataType::DWORD) {
-            state->data_table(
-                key,
-                util::convert_bits<std::uint16_t, std::uint32_t>(buffer, skip));
+            auto val = util::convert_bits<std::uint16_t, std::uint32_t>(
+                buffer, skip, /* reverse */ true);
+            LOG_DEBUG("Key={}, hi={}, low={}, value={}", key, buffer[skip],
+                      buffer[skip + 1], val);
+            state->data_table(key, val);
           } else if (type == modbus::DataType::LWORD) {
             state->data_table(key, buffer[skip]);
           }
