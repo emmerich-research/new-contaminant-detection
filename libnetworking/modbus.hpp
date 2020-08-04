@@ -11,6 +11,7 @@
 #include <chrono>
 #include <cstdint>
 #include <functional>
+#include <mutex>
 #include <variant>
 
 #include <boost/system/error_code.hpp>
@@ -239,6 +240,10 @@ class Modbus {
    * Timeout type
    */
   typedef std::chrono::steady_clock::duration Timeout;
+  /**
+   * Lock
+   */
+  typedef std::lock_guard<std::mutex> Lock;
   /**
    * Max Timeout
    */
@@ -800,6 +805,11 @@ class Modbus {
                                 const std::uint16_t&    address,
                                 const uint16_t&         value);
 
+  /**
+   * Mutex
+   */
+  inline std::mutex& mutex() { return mutex_; }
+
  protected:
   /**
    * Header Length
@@ -844,6 +854,10 @@ class Modbus {
    * Response  timeout
    */
   Modbus::Timeout response_timeout_;
+  /**
+   * Mutex
+   */
+  std::mutex mutex_;
 };
 
 /**

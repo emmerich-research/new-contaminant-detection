@@ -273,6 +273,8 @@ void TCP::handle_get_response(const Modbus::ErrorCode& error_code,
 }
 
 Modbus::Response TCP::send(Modbus::Buffer& request, const std::size_t& length) {
+  const Modbus::Lock lock(mutex());
+
   modbus::exception exception;
   Modbus::ErrorCode ec;
   Modbus::Buffer    response;
