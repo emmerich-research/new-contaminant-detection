@@ -75,6 +75,7 @@ static const int ATM_ERR = -1;
 static const char* IMAGING_REQUEST_KEY = "@IMAGING_REQUEST_KEY@";
 static const char* IMAGING_READY_KEY   = "@IMAGING_READY_KEY@";
 static const char* IMAGING_DONE_KEY    = "@IMAGING_DONE_KEY@";
+static const char* HEARBEAT_KEY        = "@HEARTBEAT_KEY@";
 
 static const char* PROJECT_CONFIG_DIR  = "@PROJECT_CONFIG_DIR@";
 static const char* PROJECT_CONFIG_FILE = "@PROJECT_CONFIG_FILE@";

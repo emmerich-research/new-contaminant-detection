@@ -49,7 +49,7 @@ class StateImpl : public StackObj {
   using StateMutex = std::shared_mutex;
   using StateLock = std::lock_guard<StateMutex>;
   using StatusTable = std::unordered_map<std::string, bool>;
-  using DataTable = std::unordered_map<std::string, unsigned int>;
+  using DataTable = std::unordered_map<std::string, unsigned long>;
 
  public:
   /**
@@ -82,14 +82,14 @@ class StateImpl : public StackObj {
    *
    * @return value of specified entry id in data table
    */
-  unsigned int data_table(const std::string& id);
+  unsigned long data_table(const std::string& id);
   /**
    * Create/Update data table entry
    *
    * @param id    id of entry
    * @param value new data value for specific id
    */
-  void data_table(const std::string& id, unsigned int value);
+  void data_table(const std::string& id, unsigned long value);
   /**
    * Get mutex
    *

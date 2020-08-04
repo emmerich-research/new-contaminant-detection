@@ -34,12 +34,12 @@ StateImpl::DataTable& StateImpl::data_table() {
   return data_table_;
 }
 
-unsigned int StateImpl::data_table(const std::string& id) {
+unsigned long StateImpl::data_table(const std::string& id) {
   StateImpl::StateLock lock(mutex());
   return data_table_[id];
 }
 
-void StateImpl::data_table(const std::string& id, unsigned int value) {
+void StateImpl::data_table(const std::string& id, unsigned long value) {
   data_table_[id] = value;
 }
 }  // namespace impl

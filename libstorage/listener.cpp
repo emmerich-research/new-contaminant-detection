@@ -95,9 +95,9 @@ void StorageListener::execute() {
         state->data_table("day"),          state->data_table("hour"),
         state->data_table("minute"),       state->data_table("second"),
         state->data_table("sku_card"),     state->data_table("sku_number"),
-        state->data_table("sku_prod_day"), state->data_table("sku_heartbit"),
-        state->data_table("tray_barcode"), state->data_table("lid_barcode"),
-        state->data_table("batch_id"),     state->data_table("infection_id")};
+        state->data_table("sku_prod_day"), state->data_table("tray_barcode"),
+        state->data_table("lid_barcode"),  state->data_table("batch_id"),
+        state->data_table("infection_id")};
 
     write_status(IMAGING_READY_KEY, false);
     write_status(IMAGING_DONE_KEY, false);

@@ -28,7 +28,6 @@ static Storage init_storage(const std::string& path) {
           sqlite_orm::make_column("SKU_CARD", &schema::Image::sku_card),
           sqlite_orm::make_column("SKU_NUMBER", &schema::Image::sku_number),
           sqlite_orm::make_column("SKU_PROD_DAY", &schema::Image::sku_prod_day),
-          sqlite_orm::make_column("HEARTBIT", &schema::Image::heartbit),
           sqlite_orm::make_column("TRAY_BARCODE", &schema::Image::tray_barcode),
           sqlite_orm::make_column("LID_BARCODE", &schema::Image::lid_barcode),
           sqlite_orm::make_column("BATCH_ID", &schema::Image::batch_id),

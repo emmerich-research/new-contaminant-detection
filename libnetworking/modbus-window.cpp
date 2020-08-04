@@ -47,7 +47,7 @@ void ModbusWindow::show() {
       ImGui::SameLine();
       // ImGui::SameLine(total_w - 20 - value_str.length() * font_size);
       // ImGui::SetNextItemWidth(total_w - 20 - value_str.length() * font_size);
-      ImGui::TextColored(data_color, "%u", value);
+      ImGui::TextColored(data_color, "%lu", value);
     }
 
     ImGui::Separator();

@@ -12,6 +12,7 @@ set(PROJECT_CONFIG_FILE          "${PROJECT_CONFIG_DIR}/config.toml")
 set(IMAGING_REQUEST_KEY          "imaging-request")
 set(IMAGING_READY_KEY            "imaging-ready")
 set(IMAGING_DONE_KEY             "imaging-done")
+set(HEARTBEAT_KEY                "heartbeat")
 
 # Copy conf folder
 file(COPY "${PROJECT_SOURCE_DIR}/config"
