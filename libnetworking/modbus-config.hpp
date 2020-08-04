@@ -46,6 +46,10 @@ class ModbusConfig {
 
   inline const impl::ConfigImpl* base_config() const { return base_config_; }
 
+  inline Table& data() { return data_; };
+  inline Table& plc_jetson_comm() { return plc_jetson_comm_; };
+  inline Table& jetson_plc_comm() { return jetson_plc_comm_; };
+
   inline const Table& data() const { return data_; };
   inline const Table& plc_jetson_comm() const { return plc_jetson_comm_; };
   inline const Table& jetson_plc_comm() const { return jetson_plc_comm_; };
@@ -99,10 +103,6 @@ class ModbusConfig {
   void load_data();
   void load_plc_jetson_comm();
   void load_jetson_plc_comm();
-
-  inline Table& data() { return data_; };
-  inline Table& plc_jetson_comm() { return plc_jetson_comm_; };
-  inline Table& jetson_plc_comm() { return jetson_plc_comm_; };
 
   static void sort_table(Table& table);
 

@@ -21,8 +21,7 @@ ModbusWindow::ModbusWindow(const ModbusConfig&     config,
                            float                   height,
                            float                   width,
                            const ImGuiWindowFlags& flags)
-    : gui::Window{"Modbus Data", height, width, flags},
-      config_{std::move(config)} {}
+    : gui::Window{"Modbus Data", height, width, flags}, config_{config} {}
 
 ModbusWindow::~ModbusWindow() {}
 
