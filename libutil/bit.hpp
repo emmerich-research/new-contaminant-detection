@@ -144,7 +144,11 @@ template <typename From,
 static To convert_bits(const From* buffer, const unsigned int& start_addr = 0, bool reverse = false) {
   if constexpr (std::is_same_v<From, std::uint16_t>) {
     if constexpr (std::is_same_v<To, std::uint32_t>) {
-      return static_cast<To>(buffer[start_addr] << 16) | buffer[start_addr + 1];
+      if (reverse) {
+        return static_cast<To>(buffer[start_addr + 1] << 16) | buffer[start_addr];
+      } else {
+        return static_cast<To>(buffer[start_addr] << 16) | buffer[start_addr + 1];
+      }
     } else if constexpr (std::is_same_v<To, std::uint64_t>) {
       if (reverse) {
         return static_cast<To>(
@@ -192,7 +196,11 @@ static To convert_bits(const std::array<From, Size>& buffer,
   massert(start_addr < buffer.max_size(), "sanity");
   if constexpr (std::is_same_v<From, std::uint16_t>) {
     if constexpr (std::is_same_v<To, std::uint32_t>) {
-      return static_cast<To>(buffer[start_addr] << 16) | buffer[start_addr + 1];
+      if (reverse) {
+        return static_cast<To>(buffer[start_addr + 1] << 16) | buffer[start_addr];
+      } else {
+        return static_cast<To>(buffer[start_addr] << 16) | buffer[start_addr + 1];
+      }
     } else if constexpr (std::is_same_v<To, std::uint64_t>) {
       if (reverse) {
         return static_cast<To>(
