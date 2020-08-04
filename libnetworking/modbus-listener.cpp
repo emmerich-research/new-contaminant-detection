@@ -90,11 +90,13 @@ void ModbusListener::response_callback(const ModbusResponse& response) {
         if (type == modbus::DataType::BYTE || type == modbus::DataType::WORD) {
           state->data_table(key, buffer[skip]);
         } else if (type == modbus::DataType::DWORD) {
-          state->data_table(
-              key,
-              util::convert_bits<std::uint16_t, std::uint32_t>(buffer, skip));
+          state->data_table(key,
+                            util::convert_bits<std::uint16_t, std::uint32_t>(
+                                buffer, skip, /*  reverse */ true));
         } else if (type == modbus::DataType::LWORD) {
-          state->data_table(key, buffer[skip]);
+          state->data_table(key,
+                            util::convert_bits<std::uint16_t, std::uint64_t>(
+                                buffer, skip, /*  reverse */ true));
         }
 
         skip += util::to_underlying(type);
