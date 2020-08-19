@@ -40,6 +40,7 @@ include(CTest)
 include(Doctest)
 include(Documentation)
 include(Filesystem)
+include(Fmt)
 include(Glad)
 include(LTO)
 include(Misc)
@@ -47,9 +48,13 @@ include(Spdlog)
 include(Toml)
 include(ucm)
 include(Warnings)
+include(Asio2)
 
 # enable unity build
 set(UCM_UNITY_BUILD ON)
+
+# check if pkg-config exists
+# find_package(PkgConfig REQUIRED)
 
 # Check for LTO support.
 find_lto(CXX)
@@ -100,12 +105,16 @@ find_package(ImGui ${IMGUI_VERSION} REQUIRED)
 find_package(SQLite3 REQUIRED)
 include(SqliteORM)
 
+# Libmodbus
+# pkg_check_modules(libmodbus REQUIRED IMPORTED_TARGET libmodbus)
+
 if (Boost_FOUND
     AND SQLite3_FOUND
     AND OpenCV_FOUND
     AND IMGUI_FOUND)
   add_subdirectory(libutil)
   add_subdirectory(libcore)
+  add_subdirectory(libmodbus)
   add_subdirectory(libnetworking)
   add_subdirectory(libdetector)
   add_subdirectory(libgui)

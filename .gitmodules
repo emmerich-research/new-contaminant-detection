@@ -22,3 +22,9 @@
 [submodule "external/sqlite_orm"]
 	path = external/sqlite_orm
 	url = https://github.com/fnc12/sqlite_orm.git
+[submodule "external/fmt"]
+	path = external/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "external/asio2"]
+	path = external/asio2
+	url = https://github.com/zhllxt/asio2

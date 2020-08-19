@@ -3,21 +3,22 @@ project(driver)
 file(GLOB_RECURSE driver_sources "*.cpp")
 
 foreach(driver_file ${driver_sources})
-  # I used a simple string replace, to cut off .cpp.
   get_filename_component(driver_source_file ${driver_file} NAME)
   string(REPLACE ".cpp" "" driver_exe ${driver_source_file})
 
   add_executable(${driver_exe} ${driver_file})
 
   target_include_directories(${driver_exe} PRIVATE
-    ${Boost_INCLUDE_DIR})
+    ${Boost_INCLUDE_DIR}
+    ${Asio2_INCLUDE_DIR})
 
   target_link_libraries(${driver_exe} PRIVATE
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
     "${PROJECT_NAMESPACE}::util"
     "${PROJECT_NAMESPACE}::core"
-    "${PROJECT_NAMESPACE}::networking")
+    "${PROJECT_NAMESPACE}::networking"
+    "${PROJECT_NAMESPACE}::modbus")
 
   target_set_warnings(${driver_exe}
     ENABLE ALL
