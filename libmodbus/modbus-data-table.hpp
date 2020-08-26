@@ -449,15 +449,10 @@ class table {
 
   /**
    * Table constructor
-   */
-  explicit table() noexcept;
-
-  /**
-   * Table constructor
    *
    * @param initializer initializer factory
    */
-  explicit table(const initializer_t& initializer) noexcept;
+  explicit table(const initializer_t& initializer = {}) noexcept;
 
   /**
    * Get coils block

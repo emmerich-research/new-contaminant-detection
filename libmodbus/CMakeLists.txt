@@ -1,6 +1,12 @@
 project(modbus)
 
+if(${CMAKE_BUILD_TYPE} MATCHES Debug)
+  add_definitions(-DDEBUG_ON)
+endif()
+
 ucm_add_files(
+  "modbus-logger.cpp"
+
   "modbus-data-table.cpp"
 
   "modbus-bit-read.cpp"
@@ -8,6 +14,7 @@ ucm_add_files(
   "modbus-connection.cpp"
   "modbus-connection-manager.cpp"
 
+  "modbus-request-handler.cpp"
   "modbus-server.cpp"
 
   TO SOURCES)
@@ -31,15 +38,21 @@ target_include_directories(modbus SYSTEM PRIVATE
 target_link_libraries(modbus PUBLIC
   ${CMAKE_THREAD_LIBS_INIT}
   ${Boost_LIBRARIES}
-  fmt::fmt)
+  fmt::fmt
+  struc)
 
 target_set_warnings(modbus
   ENABLE ALL
   DISABLE Annoying)
 
 set_target_properties(modbus PROPERTIES
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED YES
-    CXX_EXTENSIONS NO)
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED YES
+  CXX_EXTENSIONS NO)
+
+target_compile_options(modbus PRIVATE
+  -Wno-sign-conversion
+  -Wno-sign-compare
+  -Wno-zero-as-null-pointer-constant)
 
 target_enable_lto(modbus optimized)

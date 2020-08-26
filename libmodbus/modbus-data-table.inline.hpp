@@ -4,6 +4,8 @@
 #include "modbus-data-table.hpp"
 
 #include <algorithm>
+#include <iostream>
+#include <iterator>
 
 #include "modbus-exception.hpp"
 
@@ -18,7 +20,7 @@ inline constexpr base<base_container_t, data_t, count_t>::base(
     size_type        capacity,
     data_t           default_value) noexcept
     : starting_address_{std::move(starting_address)},
-      container_{},
+      container_(capacity, default_value),
       capacity_{capacity},
       default_value_{default_value} {}
 
@@ -29,7 +31,7 @@ inline constexpr base<base_container_t, data_t, count_t>::base(
     const address_t&      starting_address,
     const container_type& container) noexcept
     : starting_address_{std::move(starting_address)},
-      container_{std::move(container)},
+      container_(std::move(container)),
       capacity_{container.size()},
       default_value_{0} {}
 
@@ -64,8 +66,7 @@ inline constexpr sequential<data_t, count_t>::sequential(
     data_t           default_value) noexcept
     : base<std::vector, data_t, count_t>{starting_address, capacity,
                                          default_value} {
-  container().reserve(capacity);
-  reset();
+  container().resize(capacity);
 }
 
 template <typename data_t, typename count_t>
@@ -74,8 +75,7 @@ inline constexpr sequential<data_t, count_t>::sequential(
     : base<std::vector, data_t, count_t>{initializer.starting_address,
                                          initializer.capacity,
                                          initializer.default_value} {
-  container().reserve(capacity());
-  reset();
+  container().resize(capacity());
 }
 
 template <typename data_t, typename count_t>
@@ -89,12 +89,11 @@ inline constexpr typename sequential<data_t, count_t>::slice_type
 sequential<data_t, count_t>::get(const address_t& address,
                                  const count_t&   count) const {
   if (!validate(address, count)) {
-    throw ex::illegal_data_address{};
-    /*throw ex::out_of_range{*/
-    /*"Slicing with given address and count is out of bound"};*/
+    throw ex::illegal_data_address();
   }
 
-  return {container().begin(), container().end()};
+  return {container().begin() + address(),
+          container().begin() + address() + count()};
 }
 
 template <typename data_t, typename count_t>
@@ -103,8 +102,6 @@ inline constexpr void sequential<data_t, count_t>::set(
     const container_type& buffer) {
   if (!validate_sz(address, buffer.size())) {
     throw ex::illegal_data_address{};
-    /*throw ex::out_of_range{*/
-    /*"Slicing with given address and buffer size is out of bound"};*/
   }
 
   address_t idx = address - starting_address();
@@ -117,7 +114,6 @@ inline constexpr void sequential<data_t, count_t>::set(const address_t& address,
                                                        data_t           value) {
   if (!validate(address)) {
     throw ex::illegal_data_address{};
-    // throw ex::out_of_range{"Address is out of bound"};
   }
 
   address_t idx = address - starting_address();

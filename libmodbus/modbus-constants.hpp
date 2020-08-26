@@ -2,6 +2,7 @@
 #define LIB_MODBUS_MODBUS_CONSTANTS_HPP_
 
 #include <cstdint>
+#include <string_view>
 
 namespace modbus {
 namespace constants {
@@ -70,6 +71,7 @@ static constexpr std::uint16_t   max_num_bits_read = 0x07D0;
 static constexpr std::uint16_t   max_num_regs_read = 0x007D;
 static constexpr std::uint16_t   max_num_bits_write = 0x07D0;
 static constexpr std::uint16_t   max_num_regs_write = 0x007D;
+
 }  // namespace constants
 }
 

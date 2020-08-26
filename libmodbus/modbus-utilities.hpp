@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <cstdlib>
 #include <memory>
+#include <string>
 #include <type_traits>
 
 #include "modbus-types.hpp"
@@ -188,6 +189,24 @@ inline constexpr T unpack(
   }
 
   return 0;
+}
+
+static std::string packet_str(const internal::packet_t& packet) {
+  internal::packet_t::size_type index = 0;
+
+  std::string s = "[";
+
+  for (const auto& byte : packet) {
+    index++;
+    if (index < packet.size()) {
+      s += fmt::format("{:#04x} ", byte);
+    } else {
+      s += fmt::format("{:#04x}", byte);
+    }
+  }
+
+  s += "]";
+  return s;
 }
 }  // namespace utilities
 }  // namespace modbus

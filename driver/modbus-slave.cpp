@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <thread>
@@ -31,38 +32,39 @@ static void cout_bytes(const modbus::internal::packet_t& packet) {
   LOG_DEBUG("{}", s);
 }
 
+class server_logger : public modbus::logger {
+ public:
+  explicit server_logger(bool debug = false) : modbus::logger(debug) {}
+
+  virtual ~server_logger() override {}
+
+  inline virtual void log(const std::string& message) const noexcept override {
+    LOG_DEBUG("{}", message);
+  }
+};
+
 int main([[maybe_unused]] int argc, [[maybe_unused]] const char** argv) {
   USE_NAMESPACE
-
 
   if (initialize_core()) {
     std::cerr << "cannot initialize config, state, and logger!" << std::endl;
     return ATM_ERR;
   }
 
-  modbus::table data_table;
+  modbus::logger::create<server_logger>(true);
 
-  modbus::request::read_coils req_read_coils{modbus::address_t{0x00},
-                                             modbus::num_bits_t{1}};
+  auto server = modbus::server::create_unique();
 
-  req_read_coils.initialize({0x1234, 0x01});
+  server->bind_connect(
+      [](auto& session_ptr, [[maybe_unused]] auto& data_table) {
+        session_ptr->start_timer(1, std::chrono::seconds(1),
+                                 []() { /* creating heartbeat */ });
+      });
 
-  auto packet = req_read_coils.encode();
+  server->run("1502");
 
-  LOG_DEBUG("{}", req_read_coils);
-  cout_bytes(req_read_coils.encode());
-
-  auto res_read_coils = req_read_coils.execute(data_table);
-
-  LOG_DEBUG("{}", *res_read_coils);
-
-  cout_bytes(res_read_coils->encode());
-
-  auto server = modbus::server::create_unique("localhost", "1502");
-
-  server->run();
-
-  LOG_DEBUG("Shutting down completed");
+  while (std::getchar() != '\n') {
+  }
 
   return 0;
 }

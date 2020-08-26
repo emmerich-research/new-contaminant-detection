@@ -8,13 +8,14 @@ foreach(driver_file ${driver_sources})
 
   add_executable(${driver_exe} ${driver_file})
 
-  target_include_directories(${driver_exe} PRIVATE
+  target_include_directories(${driver_exe} SYSTEM PRIVATE
     ${Boost_INCLUDE_DIR}
     ${Asio2_INCLUDE_DIR})
 
   target_link_libraries(${driver_exe} PRIVATE
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
+    struc
     "${PROJECT_NAMESPACE}::util"
     "${PROJECT_NAMESPACE}::core"
     "${PROJECT_NAMESPACE}::networking"
@@ -28,6 +29,12 @@ foreach(driver_file ${driver_sources})
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO)
+
+  target_compile_options(${driver_exe} PRIVATE
+   -Wno-sign-conversion
+   -Wno-sign-compare
+   -Wno-zero-as-null-pointer-constant
+   -Wno-deprecated-copy-dtor)
 
   target_enable_lto(${driver_exe} optimized)
 endforeach()

@@ -32,7 +32,11 @@ namespace internal {
 /**
  * Packet type
  */
-typedef std::vector<std::uint8_t> packet_t;
+typedef std::vector<char> packet_t;
+/**
+ * Base packet type
+ */
+typedef char* base_packet_t;
 
 /**
  * Base metadata
@@ -49,6 +53,11 @@ class base_metadata_t {
    */
   inline explicit constexpr base_metadata_t(T value = 0) noexcept
       : value_{value} {}
+
+  /**
+   * Get reference of value
+   */
+  inline T& ref() noexcept { return value_; }
 
   /**
    * Set value

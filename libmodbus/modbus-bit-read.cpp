@@ -4,7 +4,10 @@
 
 #include <algorithm>
 
+#include <struc.hpp>
+
 #include "modbus-exception.hpp"
+#include "modbus-logger.hpp"
 
 namespace modbus {
 namespace request {
@@ -16,20 +19,21 @@ internal::packet_t read_coils::encode() {
   calc_length(data_length);
   internal::packet_t packet = header_packet();
   packet.reserve(header_length + data_length + 1);
-  utilities::pack(packet, function());
-  utilities::pack(packet, address_());
-  utilities::pack(packet, count_());
+  internal::packet_t pdu =
+      struc::pack(fmt::format(">{}", format), address_(), count_());
+  packet.insert(packet.end(), pdu.begin(), pdu.end());
   return packet;
 }
 
 void read_coils::decode(const internal::packet_t& packet) {
-  if (packet.at(header_length) ==
+  if (packet.at(header_length) !=
       utilities::to_underlying(constants::function_code::read_coils)) {
     throw ex::bad_data{};
   }
 
-  address_(utilities::unpack<std::uint16_t>(packet, header_length));
-  count_(utilities::unpack<std::uint16_t>(packet, header_length + 2));
+  decode_header(packet);
+  struc::unpack(fmt::format(">{}", format), packet.data() + header_length + 1,
+                address_.ref(), count_.ref());
 }
 
 typename internal::response<constants::function_code::read_coils>::pointer
@@ -65,10 +69,11 @@ internal::packet_t read_coils::encode() {
   bits_ = block::bits::container_type{start, end};
 
   internal::packet_t packet = header_packet();
-  packet.reserve(header_length + 1);
-  utilities::pack(packet, function());
-  utilities::pack(packet, request_->response_size());
-  utilities::pack(packet, bits_);
+  internal::packet_t pdu =
+      struc::pack(fmt::format(">{}", format), request_->byte_count());
+  internal::packet_t bits(bits_.begin(), bits_.end());
+  packet.insert(packet.end(), pdu.begin(), pdu.end());
+  packet.insert(packet.end(), bits.begin(), bits.end());
   return packet;
 }
 
@@ -83,16 +88,26 @@ std::ostream& read_coils::dump(std::ostream& os) const {
 }
 
 void read_coils::decode(const internal::packet_t& packet) {
-  internal::packet_t::size_type offset = header_length + 1;
+  if (packet.at(header_length) !=
+      utilities::to_underlying(constants::function_code::read_coils)) {
+    throw ex::bad_data{};
+  }
+
+  decode_header(packet);
+  internal::packet_t::size_type byte_idx = header_length + 1;
   block::bits::container_type   buffer;
   std::transform(
-      packet.begin() + offset, packet.end() - offset,
-      std::back_inserter(buffer),
+      packet.begin() + byte_idx + 1, packet.end(), std::back_inserter(buffer),
       [](const internal::packet_t::value_type& byte)
           -> block::bits::container_type::value_type {
         return static_cast<block::bits::container_type::value_type>(byte);
       });
+
+  if (buffer.size() != packet.at(byte_idx)) {
+    throw ex::bad_data{};
+  }
+
   bits_.swap(buffer);
 }
+}  // namespace response
 }  // namespace modbus
-}

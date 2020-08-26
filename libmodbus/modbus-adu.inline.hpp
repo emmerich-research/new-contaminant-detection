@@ -1,6 +1,10 @@
 #ifndef LIB_MODBUS_MODBUS_ADU_INLINE_HPP_
 #define LIB_MODBUS_MODBUS_ADU_INLINE_HPP_
 
+#include <string>
+
+#include <struc.hpp>
+
 #include "modbus-adu.hpp"
 #include "modbus-utilities.hpp"
 
@@ -74,6 +78,13 @@ inline adu<modbus_function>& adu<modbus_function>::unit(std::uint8_t new_unit) {
 }
 
 template <constants::function_code modbus_function>
+inline void adu<modbus_function>::decode_header(const packet_t& packet) {
+  std::uint16_t temp;
+  struc::unpack(fmt::format(">{}", header_func_format), packet.data(),
+                transaction_, temp, length_, unit_, temp);
+}
+
+template <constants::function_code modbus_function>
 inline bool adu<modbus_function>::operator==(const adu& other) const {
   return transaction_ && other.transaction_;
 }
@@ -90,12 +101,9 @@ inline bool adu<modbus_function>::operator<(const adu& other) const {
 
 template <constants::function_code modbus_function>
 inline packet_t adu<modbus_function>::header_packet() {
-  packet_t packet;
-  packet.reserve(header_length);
-  utilities::pack(packet, transaction());
-  utilities::pack(packet, protocol);
-  utilities::pack(packet, length());
-  utilities::pack(packet, unit());
+  packet_t packet =
+      struc::pack(fmt::format(">{}", header_func_format), transaction_,
+                  protocol, length_, unit_, function_code);
   return packet;
 }
 

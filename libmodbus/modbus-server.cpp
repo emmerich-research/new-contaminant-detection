@@ -3,211 +3,80 @@
 #include "modbus-server.hpp"
 
 #include <signal.h>
-#include <functional>
 #include <utility>
 
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
+#include "modbus-logger.hpp"
+
+#include "modbus-adu.hpp"
 #include "modbus-constants.hpp"
+#include "modbus-exception.hpp"
 #include "modbus-types.hpp"
 
-static void cout_bytes(const modbus::internal::packet_t& packet) {
-  modbus::internal::packet_t::size_type index = 0;
-
-  std::string s = "[Packet, ";
-
-  for (unsigned byte : packet) {
-    index++;
-    if (index < packet.size()) {
-      s += fmt::format("{:#04x} ", byte);
-    } else {
-      s += fmt::format("{:#04x}", byte);
-    }
-  }
-
-  s += "]";
-
-  std::cout << s << std::endl;
-}
+#include "modbus-bit-read.hpp"
 
 namespace modbus {
-// namespace exception {
-// failed_allocation::failed_allocation(type type__) : type_{type__} {}
-
-// const char* failed_allocation::what() const noexcept {
-//   switch (type_) {
-//     case context:
-//       return "Failed to allocate modbus context";
-//     case mapping:
-//       return "Failed to allocate modbus mapping";
-//     case socket:
-//       return "Failed to allocate socket";
-//     default:
-//       return "Failed to allocate";
-//   }
-// }
-
-// connection_problem::connection_problem(type type__) : type_{type__} {}
-
-// const char* connection_problem::what() const noexcept {
-//   switch (type_) {
-//     case closed:
-//       return "Socket is not opened";
-//     case listen:
-//       return "Cannot listen to specified service / port";
-//     case select:
-//       return "Server select call failure.";
-//     default:
-//       return "Something wrong with the connection";
-//   }
-// }
-// }  // namespace exception
-
-class session : public std::enable_shared_from_this<session> {
- public:
-  /**
-   * Session pointer
-   */
-  typedef std::shared_ptr<session> pointer;
-
-  /**
-   * Session factory
-   *
-   * @param args arguments to pass to constructor
-   */
-  template <typename... Args>
-  inline static auto create(Args&&... args) {
-    return pointer(new session(std::forward<Args>(args)...));
-  }
-
- public:
-  /**
-   * Get socket
-   *
-   * @return tcp socket
-   */
-  boost::asio::ip::tcp::socket& socket() { return socket_; }
-
-  /**
-   * Start connection
-   */
-  void start() {
-    handle_read();
-  }
-
- private:
-  /**
-   * Session constructor
-   *
-   * @param io_context boost asio io context
-   */
-  session(boost::asio::io_context& io_context) : socket_{io_context} {
-    packet_.resize(constants::max_adu_length);
-  }
-
-  /**
-   * Handle read
-   */
-  void handle_read() {
-    auto self(shared_from_this());
-
-    boost::asio::async_read(
-        socket_, boost::asio::buffer(packet_, constants::max_adu_length),
-        [this, self](boost::system::error_code error, std::size_t length) {
-          if (!error) {
-            handle_write(length);
-          }
-        });
-  }
-
-  /**
-   * Handle write
-   *
-   * @param error             error code
-   * @param bytes_transferred bytes transferred
-   */
-  void handle_write(std::size_t length) {
-    auto self(shared_from_this());
-
-    cout_bytes(packet_);
-
-    boost::asio::async_write(socket_, boost::asio::buffer(packet_, length),
-                             [this, self](boost::system::error_code error,
-                                          std::size_t /* length */) {
-                               if (!error) {
-                                 handle_read();
-                               }
-                             });
-  }
-
- private:
-  /**
-   * TCP socket
-   */
-  boost::asio::ip::tcp::socket socket_;
-  /**
-   * Packet
-   */
-  internal::packet_t packet_;
-};
-
-server::server(const std::string& address, const std::string& port)
-    : io_context_{1}, signals_{io_context_}, acceptor_{io_context_} {
-  // Register to handle the signals that indicate when the server should exit.
-  // It is safe to register for the same signal multiple times in a program,
-  // provided all registration for the specified signal is made through Asio.
-  signals_.add(SIGINT);
-  signals_.add(SIGTERM);
-#if defined(SIGQUIT)
-  signals_.add(SIGQUIT);
-#endif  // defined(SIGQUIT)
-
-  do_await_stop();
-
-  // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
-  boost::asio::ip::tcp::resolver resolver(io_context_);
-  boost::asio::ip::tcp::endpoint endpoint =
-      *resolver.resolve(address, port).begin();
-  acceptor_.open(endpoint.protocol());
-  acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-  acceptor_.bind(endpoint);
-  acceptor_.listen();
-
-  do_accept();
+server::server(std::size_t concurrency)
+    : server_{constants::max_adu_length, constants::max_adu_length,
+              concurrency},
+      data_table_{},
+      req_handler_{&data_table_},
+      on_connect_cb_{[](auto&, auto&) {}},
+      on_disconnect_cb_{[](auto&, auto&) {}} {
+  server_.bind_start(std::bind(&server::on_start, this, std::placeholders::_1))
+      .bind_stop(std::bind(&server::on_stop, this, std::placeholders::_1))
+      .bind_connect(std::bind(&server::on_connect, this, std::placeholders::_1))
+      .bind_disconnect(
+          std::bind(&server::on_disconnect, this, std::placeholders::_1))
+      .bind_recv(std::bind(&server::on_receive, this, std::placeholders::_1,
+                           std::placeholders::_2));
 }
 
-server::~server() {}
-
-// void server::prepare_mapping(const helper::map_config& config) {}
-
-void server::run() {
-  io_context_.run();
+server::~server() {
+  server_.stop();
 }
 
-void server::do_accept() {
-  acceptor_.async_accept([this](boost::system::error_code    ec,
-                                boost::asio::ip::tcp::socket socket) {
-    if (!acceptor_.is_open()) {
-      return;
-    }
+void server::on_start(asio::error_code ec) {
+  logger::get()->debug("starting tcp server @ {} {}, message: {}",
+                       server_.listen_address(), server_.listen_port(),
+                       ec.message());
+}
 
-    if (!ec) {
-      /*connection_manager_.start(std::make_shared<connection>(*/
-      /*std::move(socket), connection_manager_, request_handler_));*/
-    }
+void server::on_stop(asio::error_code ec) {
+  logger::get()->debug("stopping tcp server, message: {}", ec.message());
+}
 
-    do_accept();
+void server::on_connect(session_ptr_t& session_ptr) {
+  session_ptr->no_delay(true);
+  on_connect_cb_(session_ptr, data_table_);
+  logger::get()->debug("client enters: {} {} {} {}",
+                       session_ptr->remote_address(),
+                       session_ptr->remote_port(), session_ptr->local_address(),
+                       session_ptr->local_port());
+}
+
+void server::on_disconnect(session_ptr_t& session_ptr) {
+  on_disconnect_cb_(session_ptr, data_table_);
+  logger::get()->debug("client leaves: {} {} {}", session_ptr->remote_address(),
+                       session_ptr->remote_port(), asio2::last_error_msg());
+}
+
+void server::on_receive(session_ptr_t&   session_ptr,
+                        std::string_view raw_packet) {
+  auto response = req_handler_.handle(raw_packet);
+
+#ifndef DEBUG_ON
+  logger::get()->debug("[Response, {}]", utilities::packet_str(response));
+#endif
+
+  session_ptr->send(response, [](std::size_t bytes_sent) {
+    logger::get()->debug("bytes sent {}", bytes_sent);
   });
 }
 
-void server::do_await_stop() {
-  signals_.async_wait([this](boost::system::error_code /*ec*/, int /*signo*/) {
-    // The server is stopped by cancelling all outstanding asynchronous
-    // operations. Once all operations have finished the io_context::run()
-    // call will exit.
-    acceptor_.close();
-    // connection_manager_.stop_all();
-  });
+void server::run(std::string_view port) {
+  server_.start("0.0.0.0", port);
 }
 }  // namespace modbus

@@ -40,7 +40,7 @@ class response : public adu<modbus_function> {
    *
    * @param data_table data table pointer
    */
-  explicit response(table* data_table) noexcept;
+  explicit response(table* data_table = nullptr) noexcept;
 
   /**
    * Check error

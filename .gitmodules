@@ -28,3 +28,6 @@
 [submodule "external/asio2"]
 	path = external/asio2
 	url = https://github.com/zhllxt/asio2
+[submodule "external/struc"]
+	path = external/struc
+	url = https://github.com/i94matjo/struc.git

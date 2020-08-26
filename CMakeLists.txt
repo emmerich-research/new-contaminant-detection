@@ -32,6 +32,7 @@ set(CMAKE_MODULE_PATH
   "${CMAKE_SOURCE_DIR}/external/ucm/cmake/"
   "${CMAKE_SOURCE_DIR}/cmake/")
 
+include(Asio2)
 include(GNUInstallDirs)
 include(ConfigSafeGuards)
 include(Colors)
@@ -48,7 +49,7 @@ include(Spdlog)
 include(Toml)
 include(ucm)
 include(Warnings)
-include(Asio2)
+include(Struc)
 
 # enable unity build
 set(UCM_UNITY_BUILD ON)
@@ -79,7 +80,7 @@ set(Boost_USE_RELEASE_LIBS       ON)  # only find release libs
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME     OFF)
 find_package(Boost 1.71.0 REQUIRED COMPONENTS
-  system)
+  system serialization)
 
 add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
 
@@ -104,9 +105,6 @@ find_package(ImGui ${IMGUI_VERSION} REQUIRED)
 # SQLite
 find_package(SQLite3 REQUIRED)
 include(SqliteORM)
-
-# Libmodbus
-# pkg_check_modules(libmodbus REQUIRED IMPORTED_TARGET libmodbus)
 
 if (Boost_FOUND
     AND SQLite3_FOUND

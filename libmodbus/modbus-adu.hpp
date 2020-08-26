@@ -243,6 +243,15 @@ class adu {
 
  protected:
   /**
+   * Decode packet header
+   *
+   * @param packet packet to be decoded
+   *
+   * @return instance of ADU
+   */
+  void decode_header(const packet_t& packet);
+
+  /**
    * Get header packet
    *
    * @return packet consists of header
@@ -259,6 +268,12 @@ class adu {
   inline static constexpr typename internal::packet_t::size_type
   calc_adu_length(const internal::packet_t::size_type& pdu_length);
 
+ public:
+  /**
+   * Header length
+   */
+  static constexpr typename internal::packet_t::size_type header_length = 7;
+
  protected:
   /**
    * Protocol ID
@@ -269,10 +284,6 @@ class adu {
    */
   static constexpr std::underlying_type_t<constants::function_code>
       function_code = utilities::to_underlying(modbus_function);
-  /**
-   * Header length
-   */
-  static constexpr typename internal::packet_t::size_type header_length = 7;
   /**
    * Length index
    */
@@ -289,6 +300,10 @@ class adu {
       max_length - header_length;
 
  protected:
+  /**
+   * Header struct with function format
+   */
+  static constexpr std::string_view header_func_format = "HHHBB";
   /**
    * Transaction id
    */

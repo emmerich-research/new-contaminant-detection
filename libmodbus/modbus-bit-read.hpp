@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <memory>
+#include <string_view>
 
 #include <fmt/core.h>
 #include <fmt/ostream.h>
@@ -78,19 +79,20 @@ class read_coils
       execute(table& data_table) override;
 
   /**
-   * Response size
+   * Byte count
+   *
+   * @return byte count
    */
-  inline virtual typename internal::packet_t::size_type response_size()
-      const override {
-    internal::packet_t::size_type pdu_length =
+  inline std::uint8_t byte_count() const {
+    std::uint8_t byte_count =
         static_cast<internal::packet_t::size_type>(count_()) / 8;
-    internal::packet_t::size_type remainder =
+    std::uint8_t remainder =
         static_cast<internal::packet_t::size_type>(count_()) % 8;
 
-    if (remainder == 0)
-      pdu_length++;
+    if (remainder)
+      byte_count++;
 
-    return calc_adu_length(pdu_length);
+    return byte_count;
   }
 
   /**
@@ -117,6 +119,10 @@ class read_coils
    * Number of bits
    */
   num_bits_t count_;
+  /**
+   * Struct format
+   */
+  static constexpr std::string_view format = "HH";
 
  public:
   /**
@@ -153,7 +159,7 @@ class read_coils
    * @param data_table data table
    */
   explicit read_coils(const request::read_coils* request,
-                      table*                     data_table) noexcept;
+                      table*                     data_table = nullptr) noexcept;
 
   /**
    * Encode response::read_coils packet
@@ -180,6 +186,11 @@ class read_coils
    */
   virtual std::ostream& dump(std::ostream& os) const override;
 
+  /**
+   * Get bits
+   */
+  inline const block::bits::container_type& bits() const { return bits_; }
+
  private:
   /**
    * Request pointer
@@ -189,6 +200,10 @@ class read_coils
    * Slice of data from block of bits from data table
    */
   block::bits::container_type bits_;
+  /**
+   * Struct format
+   */
+  static constexpr std::string_view format = "B";
 };
 }  // namespace response
 }

@@ -17,6 +17,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
@@ -32,12 +33,16 @@
 #endif
 
 // 2.2. Boost
+#include <boost/core/noncopyable.hpp>
+
 #include <boost/bind.hpp>
 
 #include <boost/system/error_code.hpp>
 #include <boost/system/system_error.hpp>
 
 #include <boost/lambda/lambda.hpp>
+
+#include <boost/endian/conversion.hpp>
 
 // #include <boost/date_time/posix_time/posix_time_types.hpp>
 
@@ -53,13 +58,17 @@
 #include <asio2/version.hpp>
 
 #include <asio2/base/timer.hpp>
-#include <asio2/tcp/tcp_client.hpp>
 #include <asio2/tcp/tcp_server.hpp>
+
+// 2.4 Struc
+#include <struc.hpp>
 
 // 3. Local
 #include "modbus-constants.hpp"
 #include "modbus-types.hpp"
 #include "modbus-utilities.hpp"
+
+#include "modbus-logger.hpp"
 
 #include "modbus-exception.hpp"
 
@@ -80,6 +89,8 @@
 
 #include "modbus-connection-manager.hpp"
 #include "modbus-connection.hpp"
+
+#include "modbus-request-handler.hpp"
 
 #include "modbus-server.hpp"
 
