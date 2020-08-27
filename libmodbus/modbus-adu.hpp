@@ -303,7 +303,11 @@ class adu {
    *
    * @return ADU length
    */
-  static constexpr std::uint16_t calc_adu_length(std::uint16_t pdu_length);
+  inline static constexpr std::uint16_t calc_adu_length(
+      std::uint16_t data_length) {
+    /** header_length (containing unit_id) + 1 (function) + data_length */
+    return header_length + 1 + data_length;
+  }
 
  public:
   /**

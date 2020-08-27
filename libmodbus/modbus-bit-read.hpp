@@ -19,19 +19,27 @@
 #include "modbus-response.hpp"
 
 namespace modbus {
-namespace request {
-class read_coils;
-class read_discrete_inputs;
-};  // namespace request
+// forward declarations
+namespace internal {
+packet_t pack_bits(const block::bits::container_type::const_iterator& begin,
+                   const block::bits::container_type::const_iterator& end);
+block::bits::container_type unpack_bits(const packet_t::const_iterator& begin,
+                                        const packet_t::const_iterator& end);
+}  // namespace internal
 
-namespace response {
-class read_coils;
-class read_discrete_inputs;
-}  // namespace response
+/*namespace request {*/
+// class read_coils;
+// class read_discrete_inputs;
+//};  // namespace request
+
+// namespace response {
+// class read_coils;
+// class read_discrete_inputs;
+//}  // namespace response
 
 namespace request {
 /**
- * read coils class
+ * read bits class
  *
  * @author Ray Andrew
  * @date   August 2020
@@ -39,26 +47,32 @@ namespace request {
  * Encode, decode, and execute read coils request
  * [ (Header...) | Starting Address (2 bytes) | Quantity of coils (2 bytes) ]
  */
-class read_coils : public internal::request {
+template <constants::function_code function_code>
+class base_read_bits : public internal::request {
  public:
   /**
-   * Read coils constructor
+   * Calc adu length
+   */
+  using internal::request::calc_adu_length;
+
+  /**
+   * Read bits constructor
    *
    * @param address address requested
    * @param count   count   requested
    */
-  explicit read_coils(const address_t&  address = address_t{},
-                      const num_bits_t& count = num_bits_t{}) noexcept;
+  explicit base_read_bits(const address_t&  address = address_t{},
+                          const num_bits_t& count = num_bits_t{}) noexcept;
 
   /**
-   * Encode read coils packet from given data
+   * Encode read bits packet from given data
    *
    * @return packet format
    */
   virtual packet_t encode() override;
 
   /**
-   * Decode read coils packet
+   * Decode read bits packet
    *
    * @param data data to be appended
    *
@@ -67,7 +81,7 @@ class read_coils : public internal::request {
   virtual void decode(const packet_t& data) override;
 
   /**
-   * Encode read coils packet
+   * Encode read bits packet
    *
    * [ (Header...) | Starting Address (2 bytes) | Quantity of coils (2 bytes) ]
    *
@@ -134,26 +148,36 @@ class read_coils : public internal::request {
    */
   inline const num_bits_t& count() const { return count_; }
 };
+
+using read_coils = base_read_bits<constants::function_code::read_coils>;
+using read_discrete_inputs =
+    base_read_bits<constants::function_code::read_discrete_inputs>;
 }  // namespace request
 
 namespace response {
-class read_coils : public internal::response {
+template <constants::function_code function_code>
+class base_read_bits : public internal::response {
  public:
   /**
-   * Create std::unique_ptr of response::read_coils
-   *
-   * @return std::unique_ptr of response::read_coils
+   * Calc adu length
    */
-  MAKE_STD_UNIQUE(read_coils)
+  using internal::response::calc_adu_length;
 
   /**
-   * response::read_coils constructor
+   * Create std::unique_ptr of response::read_bits
+   *
+   * @return std::unique_ptr of response::read_bits
+   */
+  MAKE_STD_UNIQUE(base_read_bits)
+
+  /**
+   * response::read_bits constructor
    *
    * @param request    read coils request pointer
    * @param data_table data table
    */
-  explicit read_coils(const request::read_coils* request,
-                      table*                     data_table = nullptr) noexcept;
+  explicit base_read_bits(const request::base_read_bits<function_code>* request,
+                          table* data_table = nullptr) noexcept;
 
   /**
    * Encode packet
@@ -187,7 +211,7 @@ class read_coils : public internal::response {
   /**
    * Request pointer
    */
-  const request::read_coils* request_;
+  const request::base_read_bits<function_code>* request_;
   /**
    * Slice of data from block of bits from data table
    */
@@ -197,6 +221,10 @@ class read_coils : public internal::response {
    */
   static constexpr std::string_view format = "B";
 };
+
+using read_coils = base_read_bits<constants::function_code::read_coils>;
+using read_discrete_inputs =
+    base_read_bits<constants::function_code::read_discrete_inputs>;
 }  // namespace response
 }
 

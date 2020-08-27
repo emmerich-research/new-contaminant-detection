@@ -46,8 +46,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] const char** argv) {
 
   modbus::logger::create<server_logger>(true);
 
-  auto data_table = modbus::table::create(
-      /* modbus::table::initializer_t{{modbus::address_t{0x00}, 6000, false}} */);
+  auto data_table = modbus::table::create();
+  /* modbus::table::initializer_t{{modbus::address_t{0x00}, 10, false}} */
 
   auto&& server = modbus::server::create(data_table);
 

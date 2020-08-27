@@ -84,6 +84,7 @@
 
 // Specific implementation
 #include "modbus-bit-read.hpp"
+#include "modbus-bit-read.inline.hpp"
 
 #include "modbus-request-handler.hpp"
 

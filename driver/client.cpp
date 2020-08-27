@@ -66,6 +66,7 @@ int main(int argc, char* argv[]) {
         modbus::num_bits_t{0x7D0}};
 
     req_read_coils.initialize({0x1234, 0x01});
+    LOG_DEBUG("{}", req_read_coils);
 
     auto request = req_read_coils.encode();
 
@@ -93,7 +94,6 @@ int main(int argc, char* argv[]) {
             // cout_bytes(packet);
             modbus::response::read_coils response{&req_read_coils};
             response.decode(packet);
-            // LOG_DEBUG("{}", response.bits());
           } catch (const modbus::ex::specification_error& exc) {
             LOG_ERROR("Modbus exception occured {}", exc.what());
           } catch (const modbus::ex::base_error& exc) {

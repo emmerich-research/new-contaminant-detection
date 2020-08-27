@@ -133,11 +133,6 @@ packet_t adu::header_packet() {
   return packet;
 }
 
-constexpr std::uint16_t adu::calc_adu_length(std::uint16_t data_length) {
-  /** header_length (containing unit_id) + 1 (function) + data_length */
-  return header_length + 1 + data_length;
-}
-
 void adu::decode(std::string_view packet) {
   decode(packet_t{packet.begin(), packet.end()});
 }

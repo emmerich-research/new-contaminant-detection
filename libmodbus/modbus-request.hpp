@@ -73,8 +73,6 @@ class request : public adu {
    * Check if response packet is mismatch with expected packet size
    */
   inline bool check_response_packet(const packet_t& packet) const {
-    logger::get()->debug("packet_size {} response_size {}", packet.size(),
-                         response_size());
     return packet.size() == response_size();
   }
 };
