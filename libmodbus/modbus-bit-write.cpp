@@ -70,7 +70,6 @@ typename internal::response::pointer write_single_coil::execute(
   }
 
   data_table->coils().set(address_, value_ == value::bits::on);
-  logger::get()->debug("Changed value: {}", data_table->coils().get(address_));
 
   return response::write_single_coil::create(this, data_table);
 }

@@ -9,7 +9,6 @@
 #include <thread>
 
 #include "modbus-exception.hpp"
-#include "modbus-logger.hpp"
 
 namespace modbus {
 namespace block {

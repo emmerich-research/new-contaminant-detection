@@ -23,13 +23,11 @@ server::server(table::pointer data_table, std::size_t concurrency)
       data_table_{std::move(data_table)},
       on_connect_cb_{[](auto&, auto&) {}},
       on_disconnect_cb_{[](auto&, auto&) {}} {
-  server_.bind_start(std::bind(&server::on_start, this, std::placeholders::_1))
-      .bind_stop(std::bind(&server::on_stop, this, std::placeholders::_1))
-      .bind_connect(std::bind(&server::on_connect, this, std::placeholders::_1))
-      .bind_disconnect(
-          std::bind(&server::on_disconnect, this, std::placeholders::_1))
-      .bind_recv(std::bind(&server::on_receive, this, std::placeholders::_1,
-                           std::placeholders::_2));
+  server_.bind_start(&server::on_start, this)
+      .bind_stop(&server::on_stop, this)
+      .bind_connect(&server::on_connect, this)
+      .bind_disconnect(&server::on_disconnect, this)
+      .bind_recv(&server::on_receive, this);
 }
 
 server::~server() {

@@ -50,12 +50,13 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] const char** argv) {
   auto&& data_table = modbus::table::create();
   auto&& server = modbus::server::create(std::move(data_table));
 
-  server->bind_connect([](auto& session_ptr, [[maybe_unused]] auto& table) {
-    /*session_ptr->start_timer(1, std::chrono::seconds(1), [&table]() {*/
-    // LOG_INFO("Coils addr 0x00: {}",
-    // table.coils().get(modbus::address_t{0x00}));
-    /*});*/
-  });
+  server->bind_connect(
+      []([[maybe_unused]] auto& session_ptr, [[maybe_unused]] auto& table) {
+        /*session_ptr->start_timer(1, std::chrono::seconds(1), [&table]() {*/
+        // LOG_INFO("Coils addr 0x00: {}",
+        // table.coils().get(modbus::address_t{0x00}));
+        /*});*/
+      });
 
   server->run();
 
