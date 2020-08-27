@@ -17,7 +17,6 @@
 #include <asio2/tcp/tcp_server.hpp>
 
 #include "modbus-data-table.hpp"
-#include "modbus-request-handler.hpp"
 #include "modbus-utilities.hpp"
 
 namespace modbus {
@@ -48,9 +47,13 @@ class server : private boost::noncopyable {
  public:
   /**
    * Server constructor
+   *
+   * @param data_table  data table pointer
+   * @param concurrency number of concurrency
    */
   explicit server(
-      std::size_t concurrency = std::thread::hardware_concurrency() * 2);
+      table::pointer data_table,
+      std::size_t    concurrency = std::thread::hardware_concurrency() * 2);
 
   /**
    * Server Destructor
@@ -60,9 +63,10 @@ class server : private boost::noncopyable {
   /**
    * Run server
    *
+   * @param host        host to listen to
    * @param port        port to listen to
    */
-  void run(std::string_view port);
+  void run(std::string_view host = "0.0.0.0", std::string_view port = "1502");
 
   /**
    * Set on connect callback
@@ -127,11 +131,7 @@ class server : private boost::noncopyable {
   /**
    * Data table
    */
-  table data_table_;
-  /**
-   * Request handler
-   */
-  request_handler req_handler_;
+  table::pointer data_table_;
   /**
    * On connect custom callback
    */

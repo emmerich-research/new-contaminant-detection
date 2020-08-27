@@ -2,6 +2,8 @@
 #define LIB_MODBUS_MODBUS_DATA_TABLE_HPP_
 
 #include <cstdlib>
+#include <memory>
+#include <shared_mutex>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -100,8 +102,8 @@ class base {
    *
    * @return pair of iterator (begin and end) slice of data from container
    */
-  virtual constexpr slice_type get(const address_t& address,
-                                   const count_t&   count) const = 0;
+  virtual slice_type get(const address_t& address,
+                         const count_t&   count) const = 0;
 
   /**
    * Set slice of data from container
@@ -109,8 +111,7 @@ class base {
    * @param address     look-up address
    * @param container   container to add
    */
-  virtual constexpr void set(const address_t&      address,
-                             const container_type& buffer) = 0;
+  virtual void set(const address_t& address, const container_type& buffer) = 0;
 
   /**
    * Set single data to container at specific address
@@ -118,7 +119,7 @@ class base {
    * @param address     look-up address
    * @param value       value to add
    */
-  virtual constexpr void set(const address_t& address, data_t value) = 0;
+  virtual void set(const address_t& address, data_t value) = 0;
 
   /**
    * Reset container
@@ -202,6 +203,10 @@ class base {
 
  protected:
   /**
+   * Mutex
+   */
+  mutable std::shared_mutex mutex_;
+  /**
    * Starting address of container
    */
   const address_t starting_address_;
@@ -264,6 +269,11 @@ class sequential : public base<std::vector, data_t, count_t> {
   using base<std::vector, data_t, count_t>::max_capacity;
 
   /**
+   * Mutex
+   */
+  using base<std::vector, data_t, count_t>::mutex_;
+
+  /**
    * Initializer
    */
   struct initializer_t {
@@ -319,8 +329,8 @@ class sequential : public base<std::vector, data_t, count_t> {
    * @return pair of iterator (begin and end) slice of data from container
    */
 
-  inline virtual constexpr slice_type get(const address_t& address,
-                                          const count_t& count) const override;
+  inline virtual slice_type get(const address_t& address,
+                                const count_t&   count) const override;
 
   /**
    * Set slice of data from container
@@ -328,8 +338,8 @@ class sequential : public base<std::vector, data_t, count_t> {
    * @param address     starting address
    * @param container   container to add
    */
-  inline virtual constexpr void set(const address_t&      address,
-                                    const container_type& container) override;
+  inline virtual void set(const address_t&      address,
+                          const container_type& container) override;
 
   /**
    * Set single data to container at specific address
@@ -337,13 +347,12 @@ class sequential : public base<std::vector, data_t, count_t> {
    * @param address     starting address
    * @param value       value to add
    */
-  inline virtual constexpr void set(const address_t& address,
-                                    data_t           value) override;
+  inline virtual void set(const address_t& address, data_t value) override;
 
   /**
    * Reset container
    */
-  inline virtual constexpr void reset() override;
+  inline virtual void reset() override;
 
   /**
    * Starting address getter
@@ -425,6 +434,16 @@ using registers = sequential<std::uint16_t, num_regs_t>;
 
 class table {
  public:
+  /**
+   * Pointer type
+   */
+  typedef std::shared_ptr<table> pointer;
+
+  /**
+   * Create shared pointer of table
+   */
+  MAKE_STD_SHARED(table)
+
   /**
    * Table initializer
    */

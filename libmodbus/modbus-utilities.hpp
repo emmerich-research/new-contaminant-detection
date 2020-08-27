@@ -2,7 +2,7 @@
 #define LIB_MODBUS_MODBUS_UTILITIES_HPP_
 
 #include <arpa/inet.h>
-#include <cstdlib>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -26,7 +26,7 @@
  */
 #define MAKE_STD_SHARED(T)                                   \
   template <typename... Args>                                \
-  inline static auto create_shared(Args&&... args) {         \
+  inline static auto create(Args&&... args) {                \
     return std::make_shared<T>(std::forward<Args>(args)...); \
   }
 
@@ -45,7 +45,7 @@
  */
 #define MAKE_STD_UNIQUE(T)                                   \
   template <typename... Args>                                \
-  inline static auto create_unique(Args&&... args) {         \
+  inline static auto create(Args&&... args) {                \
     return std::make_unique<T>(std::forward<Args>(args)...); \
   }
 
@@ -81,9 +81,8 @@ constexpr auto to_underlying(T value) noexcept {
  * for not iteratable values (int, double, custom objects, etc.)
  */
 template <typename T, std::enable_if_t<(!is_iterable<T>)>* = nullptr>
-inline void constexpr pack(internal::packet_t& packet, const T& value) {
-  typedef const typename internal::packet_t::value_type
-      byte_array[sizeof value];
+inline void constexpr pack(packet_t& packet, const T& value) {
+  typedef const typename packet_t::value_type byte_array[sizeof value];
   for (auto& byte : reinterpret_cast<byte_array&>(value)) {
     packet.push_back(byte);
   }
@@ -93,7 +92,7 @@ inline void constexpr pack(internal::packet_t& packet, const T& value) {
  * for iteratable values (string, vector, etc.)
  */
 template <typename T, std::enable_if_t<is_iterable<T>>* = nullptr>
-inline void constexpr pack(internal::packet_t& packet, const T& values) {
+inline void constexpr pack(packet_t& packet, const T& values) {
   for (const auto& value : values) {
     pack(packet, value);
   }
@@ -103,8 +102,7 @@ inline void constexpr pack(internal::packet_t& packet, const T& values) {
  * for c-strings
  */
 template <>
-inline constexpr void pack(internal::packet_t& packet,
-                           const char* const&  c_str) {
+inline constexpr void pack(packet_t& packet, const char* const& c_str) {
   for (auto i = 0; c_str[i]; ++i) {
     packet.push_back(c_str[i]);
   }
@@ -114,7 +112,7 @@ inline constexpr void pack(internal::packet_t& packet,
  * for c-strings
  */
 template <>
-inline constexpr void pack(internal::packet_t& packet, char* const& c_str) {
+inline constexpr void pack(packet_t& packet, char* const& c_str) {
   pack(packet, static_cast<const char*>(c_str));
 }
 
@@ -122,7 +120,7 @@ inline constexpr void pack(internal::packet_t& packet, char* const& c_str) {
  * for static arrays
  */
 template <typename T, size_t N>
-inline constexpr void pack(internal::packet_t& packet, const T (&values)[N]) {
+inline constexpr void pack(packet_t& packet, const T (&values)[N]) {
   for (auto i = 0u; i < N; ++i) {
     pack(packet, values[i]);
   }
@@ -132,8 +130,8 @@ inline constexpr void pack(internal::packet_t& packet, const T (&values)[N]) {
  * packing up
  */
 template <typename... Args>
-inline internal::packet_t pack(const Args&... args) {
-  internal::packet_t packet;
+inline packet_t pack(const Args&... args) {
+  packet_t packet;
   (pack(packet, args), ...);
   return packet;
 }
@@ -145,15 +143,14 @@ inline internal::packet_t pack(const Args&... args) {
  * Convert type
  */
 template <typename T, std::enable_if_t<(!is_iterable<T>)>* = nullptr>
-inline void convert_type(internal::packet_t&                  packet,
-                         const T&                             value,
-                         const internal::packet_t::size_type& start_index = 0) {
-  typedef const typename internal::packet_t::value_type
-      byte_array[sizeof value];
+inline void convert_type(packet_t&                  packet,
+                         const T&                   value,
+                         const packet_t::size_type& start_index = 0) {
+  typedef const typename packet_t::value_type byte_array[sizeof value];
 
   if (packet.size() <=
-      start_index + (sizeof(T) / sizeof(internal::packet_t::size_type))) {
-    throw ex::out_of_range{"Out of bounds"};
+      start_index + (sizeof(T) / sizeof(packet_t::size_type))) {
+    throw ex::out_of_range("Out of bounds");
   }
 
   int increment = 0;
@@ -166,24 +163,21 @@ inline void convert_type(internal::packet_t&                  packet,
  * Unpack
  */
 template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
-inline constexpr T unpack(
-    const internal::packet_t&            packet,
-    const internal::packet_t::size_type& start_index = 0) {
-  if constexpr (std::is_same_v<internal::packet_t::value_type, T>) {
+inline constexpr T unpack(const packet_t&            packet,
+                          const packet_t::size_type& start_index = 0) {
+  if constexpr (std::is_same_v<packet_t::value_type, T>) {
     return packet[start_index];
   } else if constexpr (std::is_same_v<T, std::uint16_t>) {
     if (packet.size() <=
-        start_index +
-            (sizeof(std::uint16_t) / sizeof(internal::packet_t::size_type))) {
-      throw ex::out_of_range{"Out of bounds"};
+        start_index + (sizeof(std::uint16_t) / sizeof(packet_t::size_type))) {
+      throw ex::out_of_range("Out of bounds");
     }
 
     return ntohs(*(std::uint16_t*)(packet.data() + start_index));
   } else if constexpr (std::is_same_v<T, std::uint32_t>) {
     if (packet.size() <=
-        start_index +
-            (sizeof(std::uint32_t) / sizeof(internal::packet_t::size_type))) {
-      throw ex::out_of_range{"Out of bounds"};
+        start_index + (sizeof(std::uint32_t) / sizeof(packet_t::size_type))) {
+      throw ex::out_of_range("Out of bounds");
     }
     return ntohl(*(std::uint32_t*)(packet.data() + start_index));
   }
@@ -191,17 +185,17 @@ inline constexpr T unpack(
   return 0;
 }
 
-static std::string packet_str(const internal::packet_t& packet) {
-  internal::packet_t::size_type index = 0;
+static std::string packet_str(const packet_t& packet) {
+  packet_t::size_type index = 0;
 
   std::string s = "[";
 
   for (const auto& byte : packet) {
     index++;
     if (index < packet.size()) {
-      s += fmt::format("{:#04x} ", byte);
+      s += fmt::format("{:#04x} ", static_cast<std::uint8_t>(byte));
     } else {
-      s += fmt::format("{:#04x}", byte);
+      s += fmt::format("{:#04x}", static_cast<std::uint8_t>(byte));
     }
   }
 

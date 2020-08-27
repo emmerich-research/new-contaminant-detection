@@ -1,56 +1,114 @@
 #ifndef LIB_MODBUS_MODBUS_RESPONSE_HPP_
 #define LIB_MODBUS_MODBUS_RESPONSE_HPP_
 
+#include <string_view>
 #include <type_traits>
+
+#include <boost/core/noncopyable.hpp>
 
 #include "modbus-adu.hpp"
 #include "modbus-constants.hpp"
+#include "modbus-exception.hpp"
 #include "modbus-types.hpp"
 
 namespace modbus {
 // forward declarations
+namespace ex {
+class base_error;
+}
 class table;
 namespace internal {
-template <constants::function_code modbus_function>
 class request;
-
-template <constants::function_code modbus_function>
 class response;
 }
-template <constants::function_code  modbus_function,
-          constants::exception_code modbus_exception>
-class exception_response;
+/*namespace response {*/
+// class error;
+//}
 
 namespace internal {
-template <constants::function_code modbus_function>
-class response : public adu<modbus_function> {
+enum class stage {
+  bad,
+  error,
+  passed,
+};
+
+class response : public adu {
  public:
   /**
    * Pointer type
    */
   typedef std::unique_ptr<response> pointer;
+
   /**
    * Initializer
    */
-  using typename adu<modbus_function>::initializer_t;
+  using typename adu::initializer_t;
+
+  /**
+   * Decode string_view
+   */
+  using adu::decode;
+
+  /**
+   * Decode response
+   *
+   * @param packet packet to decode
+   */
+  virtual void decode(const packet_t& packet) override;
 
  protected:
   /**
    * Response constructor
-   *
-   * @param data_table data table pointer
    */
-  explicit response(table* data_table = nullptr) noexcept;
+  explicit response() noexcept;
 
   /**
-   * Check error
+   * Response constructor
    *
-   * @param function_code function code
-   *
-   * @return error if function_code > 0x80
+   * @param function   modbus function
+   * @param data_table data table pointer
    */
-  inline static constexpr bool check_error(
-      std::underlying_type_t<constants::function_code> function_code);
+  explicit response(constants::function_code function,
+                    table*                   data_table = nullptr) noexcept;
+
+  /**
+   * Parse stage passed packet
+   *
+   * BEWARE:
+   * only parse the right (no exception) packet
+   *
+   * @param packet packet to parse
+   */
+  virtual void decode_passed(const packet_t& packet) = 0;
+
+  /**
+   * Check stage
+   *
+   * Will process these steps:
+   * - Checking packet size
+   * - Decode packet and write header metadata
+   * - Check function
+   * - Check function diff with 0x80
+   *
+   * Will result in 3 phases as defined in stage enum
+   *
+   * @param packet packet to check
+   *
+   * @return exception stage
+   */
+  stage check_stage(const packet_t& packet);
+
+  /**
+   * Initial packet check
+   *
+   * Check :
+   * Minimum size must be > header_length (7 bytes)
+   *
+   * @param packet packet to check
+   *
+   * @return test passed or not
+   */
+  static bool initial_check(const packet_t& packet);
 
  protected:
   /**
@@ -60,9 +118,68 @@ class response : public adu<modbus_function> {
 };
 }  // namespace internal
 
-template <constants::function_code  modbus_function,
-          constants::exception_code modbus_exception>
-class exception_response : public internal::response<modbus_function> {};
+namespace response {
+class error : private boost::noncopyable, public internal::response {
+ public:
+  /**
+   * Create std::unique_ptr of response::error
+   *
+   * @return std::unique_ptr of response::error
+   */
+  MAKE_STD_UNIQUE(error)
+
+  /**
+   * Modbus exception response
+   */
+  explicit error() noexcept;
+
+  /**
+   * Modbus exception response
+   *
+   * @param exc     exception
+   */
+  template <
+      typename T,
+      typename = std::enable_if<std::is_base_of_v<ex::specification_error, T>>>
+  inline explicit error(const T& ec) noexcept
+      : internal::response{ec.function()}, ec_{ec.code()} {
+    initialize({ec.header().transaction, ec.header().unit});
+  }
+
+  /**
+   * Decode stage passed packet
+   *
+   * @param packet packet to parse
+   */
+  inline virtual void decode_passed(const packet_t& packet) override {}
+
+  /**
+   * Encode response::read_coils packet
+   *
+   * @return packet format
+   */
+  virtual packet_t encode() override;
+
+  /**
+   * Decode response::read_coils packet
+   *
+   * @param packet packet to be appended
+   *
+   * @return packet format
+   */
+  virtual void decode(const packet_t& packet) override;
+
+ private:
+  /**
+   * Struct format
+   */
+  static constexpr std::string_view format = "BB";
+  /**
+   * Exception code
+   */
+  constants::exception_code ec_;
+};
+}  // namespace response
 }  // namespace modbus
 
 #endif // LIB_MODBUS_MODBUS_RESPONSE_HPP_

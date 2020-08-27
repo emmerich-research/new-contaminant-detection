@@ -14,33 +14,23 @@ class table;
 class request_handler : private boost::noncopyable {
  public:
   /**
-   * Request handler constructor
-   *
-   * @param data_table data table pointer
-   */
-  explicit request_handler(table* data_table);
-  /**
    * Handle request
    *
-   * @param packet request packet
+   * @param data_table data table
+   * @param packet     request packet
    *
    * @return packet to send
    */
-  internal::packet_t handle(const std::string_view& packet);
+  static packet_t handle(table& data_table, const std::string_view& packet);
   /**
    * Handle request
    *
-   * @param packet request packet
+   * @param data_table data table
+   * @param packet     request packet
    *
    * @return packet to send
    */
-  internal::packet_t handle(const internal::packet_t& packet);
-
- private:
-  /**
-   * Data table pointer
-   */
-  table* data_table_;
+  static packet_t handle(table& data_table, const packet_t& packet);
 };
 }  // namespace modbus
 

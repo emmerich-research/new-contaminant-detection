@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iostream>
 #include <iterator>
+#include <thread>
 
 #include "modbus-exception.hpp"
 
@@ -85,11 +86,12 @@ inline constexpr sequential<data_t, count_t>::sequential(
     : base<std::vector, data_t, count_t>{starting_address, container} {}
 
 template <typename data_t, typename count_t>
-inline constexpr typename sequential<data_t, count_t>::slice_type
+inline typename sequential<data_t, count_t>::slice_type
 sequential<data_t, count_t>::get(const address_t& address,
                                  const count_t&   count) const {
+  std::lock_guard<std::shared_mutex> lock(mutex_);
   if (!validate(address, count)) {
-    throw ex::illegal_data_address();
+    throw ex::out_of_range("Address and count are not valid");
   }
 
   return {container().begin() + address(),
@@ -97,11 +99,11 @@ sequential<data_t, count_t>::get(const address_t& address,
 }
 
 template <typename data_t, typename count_t>
-inline constexpr void sequential<data_t, count_t>::set(
-    const address_t&      address,
-    const container_type& buffer) {
+inline void sequential<data_t, count_t>::set(const address_t&      address,
+                                             const container_type& buffer) {
+  std::lock_guard<std::shared_mutex> lock(mutex_);
   if (!validate_sz(address, buffer.size())) {
-    throw ex::illegal_data_address{};
+    throw ex::out_of_range("Starting address is not valid");
   }
 
   address_t idx = address - starting_address();
@@ -110,18 +112,20 @@ inline constexpr void sequential<data_t, count_t>::set(
 }
 
 template <typename data_t, typename count_t>
-inline constexpr void sequential<data_t, count_t>::set(const address_t& address,
-                                                       data_t           value) {
+inline void sequential<data_t, count_t>::set(const address_t& address,
+                                             data_t           value) {
+  std::lock_guard<std::shared_mutex> lock(mutex_);
   if (!validate(address)) {
-    throw ex::illegal_data_address{};
+    throw ex::out_of_range("Starting address is not valid");
   }
 
   address_t idx = address - starting_address();
-  container()[idx()] = value;
+  container().at(idx()) = value;
 }
 
 template <typename data_t, typename count_t>
-inline constexpr void sequential<data_t, count_t>::reset() {
+inline void sequential<data_t, count_t>::reset() {
+  std::lock_guard<std::shared_mutex> lock(mutex_);
   std::fill(container().begin(), container().end(), default_value());
 }
 }  // namespace block

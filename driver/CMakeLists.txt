@@ -34,7 +34,8 @@ foreach(driver_file ${driver_sources})
    -Wno-sign-conversion
    -Wno-sign-compare
    -Wno-zero-as-null-pointer-constant
-   -Wno-deprecated-copy-dtor)
+   -Wno-deprecated-copy-dtor
+   -Wno-weak-vtables)
 
   target_enable_lto(${driver_exe} optimized)
 endforeach()

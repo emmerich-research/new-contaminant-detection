@@ -1,6 +1,7 @@
 #ifndef LIB_MODBUS_MODBUS_BIT_READ_HPP_
 #define LIB_MODBUS_MODBUS_BIT_READ_HPP_
 
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <string_view>
@@ -10,7 +11,6 @@
 
 #include "modbus-constants.hpp"
 #include "modbus-types.hpp"
-#include "modbus-utilities.hpp"
 
 #include "modbus-data-table.hpp"
 
@@ -39,8 +39,7 @@ namespace request {
  * Encode, decode, and execute read coils request
  * [ (Header...) | Starting Address (2 bytes) | Quantity of coils (2 bytes) ]
  */
-class read_coils
-    : public internal::request<constants::function_code::read_coils> {
+class read_coils : public internal::request {
  public:
   /**
    * Read coils constructor
@@ -56,7 +55,7 @@ class read_coils
    *
    * @return packet format
    */
-  virtual internal::packet_t encode() override;
+  virtual packet_t encode() override;
 
   /**
    * Decode read coils packet
@@ -65,7 +64,7 @@ class read_coils
    *
    * @return packet format
    */
-  virtual void decode(const internal::packet_t& data) override;
+  virtual void decode(const packet_t& data) override;
 
   /**
    * Encode read coils packet
@@ -74,26 +73,22 @@ class read_coils
    *
    * @return packet format
    */
-  virtual
-      typename internal::response<constants::function_code::read_coils>::pointer
-      execute(table& data_table) override;
+  virtual typename internal::response::pointer execute(
+      table& data_table) override;
 
   /**
    * Byte count
    *
    * @return byte count
    */
-  inline std::uint8_t byte_count() const {
-    std::uint8_t byte_count =
-        static_cast<internal::packet_t::size_type>(count_()) / 8;
-    std::uint8_t remainder =
-        static_cast<internal::packet_t::size_type>(count_()) % 8;
+  std::uint16_t byte_count() const;
 
-    if (remainder)
-      byte_count++;
-
-    return byte_count;
-  }
+  /**
+   * Get response size for error checking on client
+   *
+   * @return response size
+   */
+  inline virtual typename packet_t::size_type response_size() const override;
 
   /**
    * Dump to string
@@ -142,8 +137,7 @@ class read_coils
 }  // namespace request
 
 namespace response {
-class read_coils
-    : public internal::response<constants::function_code::read_coils> {
+class read_coils : public internal::response {
  public:
   /**
    * Create std::unique_ptr of response::read_coils
@@ -162,20 +156,18 @@ class read_coils
                       table*                     data_table = nullptr) noexcept;
 
   /**
-   * Encode response::read_coils packet
+   * Encode packet
    *
    * @return packet format
    */
-  virtual internal::packet_t encode() override;
+  virtual packet_t encode() override;
 
   /**
-   * Decode response::read_coils packet
+   * Decode stage passed  packet
    *
-   * @param packet packet to be appended
-   *
-   * @return packet format
+   * @param packet packet to parse
    */
-  virtual void decode(const internal::packet_t& packet) override;
+  virtual void decode_passed(const packet_t& packet) override;
 
   /**
    * Dump to string

@@ -15,9 +15,12 @@
 #include <cstdint>
 #include <exception>
 #include <memory>
+#include <mutex>
 #include <set>
+#include <shared_mutex>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <type_traits>
 #include <vector>
 
@@ -76,19 +79,11 @@
 #include "modbus-data-table.inline.hpp"
 
 #include "modbus-adu.hpp"
-#include "modbus-adu.inline.hpp"
-
 #include "modbus-request.hpp"
-#include "modbus-request.inline.hpp"
-
 #include "modbus-response.hpp"
-#include "modbus-response.inline.hpp"
 
 // Specific implementation
 #include "modbus-bit-read.hpp"
-
-#include "modbus-connection-manager.hpp"
-#include "modbus-connection.hpp"
 
 #include "modbus-request-handler.hpp"
 

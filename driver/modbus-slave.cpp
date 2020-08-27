@@ -13,33 +13,26 @@
 #include <libcore/core.hpp>
 #include <libmodbus/modbus.hpp>
 
-static void cout_bytes(const modbus::internal::packet_t& packet) {
-  modbus::internal::packet_t::size_type index = 0;
-
-  std::string s = "[Packet, ";
-
-  for (unsigned byte : packet) {
-    index++;
-    if (index < packet.size()) {
-      s += fmt::format("{:#04x} ", byte);
-    } else {
-      s += fmt::format("{:#04x}", byte);
-    }
-  }
-
-  s += "]";
-
-  LOG_DEBUG("{}", s);
-}
-
 class server_logger : public modbus::logger {
  public:
   explicit server_logger(bool debug = false) : modbus::logger(debug) {}
 
   virtual ~server_logger() override {}
 
-  inline virtual void log(const std::string& message) const noexcept override {
-    LOG_DEBUG("{}", message);
+  inline virtual void error(
+      const std::string& message) const noexcept override {
+    LOG_ERROR("{}", message);
+  }
+
+  inline virtual void debug(
+      const std::string& message) const noexcept override {
+    if (debug_) {
+      LOG_DEBUG("{}", message);
+    }
+  }
+
+  inline virtual void info(const std::string& message) const noexcept override {
+    LOG_INFO("{}", message);
   }
 };
 
@@ -53,15 +46,17 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] const char** argv) {
 
   modbus::logger::create<server_logger>(true);
 
-  auto server = modbus::server::create_unique();
+  auto data_table = modbus::table::create(
+      /* modbus::table::initializer_t{{modbus::address_t{0x00}, 6000, false}} */);
 
-  server->bind_connect(
-      [](auto& session_ptr, [[maybe_unused]] auto& data_table) {
-        session_ptr->start_timer(1, std::chrono::seconds(1),
-                                 []() { /* creating heartbeat */ });
-      });
+  auto&& server = modbus::server::create(data_table);
 
-  server->run("1502");
+  server->bind_connect([](auto& session_ptr, [[maybe_unused]] auto& table) {
+    session_ptr->start_timer(1, std::chrono::seconds(1),
+                             []() { /* creating heartbeat */ });
+  });
+
+  server->run();
 
   while (std::getchar() != '\n') {
   }

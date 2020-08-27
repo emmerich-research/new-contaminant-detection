@@ -2,7 +2,10 @@
 #define LIB_MODBUS_MODBUS_EXCEPTION_HPP_
 
 #include <exception>
+#include <string>
 #include <type_traits>
+
+#include <boost/core/noncopyable.hpp>
 
 #include "modbus-constants.hpp"
 #include "modbus-types.hpp"
@@ -29,6 +32,8 @@ using illegal_data_value =
 using server_device_failure =
     specification<constants::exception_code::server_device_failure>;
 using acknowledge = specification<constants::exception_code::acknowledge>;
+using negative_acknowledge =
+    specification<constants::exception_code::negative_acknowledge>;
 using server_device_busy =
     specification<constants::exception_code::server_device_busy>;
 using memory_parity_error =
@@ -44,8 +49,70 @@ using bad_data_size = internal<constants::exception_code::bad_data_size>;
 using bad_exception = internal<constants::exception_code::bad_exception>;
 using no_exception = internal<constants::exception_code::no_exception>;
 
+class base_error : private boost::noncopyable, public std::exception {
+ public:
+  inline explicit base_error(
+      constants::exception_code modbus_exception) noexcept
+      : exception_code_{modbus_exception} {}
+
+  /**
+   * Get exception code
+   *
+   * @return exception code
+   */
+  inline constexpr constants::exception_code code() const noexcept {
+    return exception_code_;
+  }
+
+ public:
+  /**
+   * Exception code
+   */
+  const constants::exception_code exception_code_;
+};
+
+class specification_error : public base_error {
+ public:
+  /**
+   * Specification error constructor
+   *
+   * @param function       modbus function
+   * @param request_header request header
+   */
+  explicit specification_error(constants::exception_code modbus_exception,
+                               constants::function_code  function,
+                               const header_t&           header) noexcept
+      : base_error{modbus_exception}, function_{function}, header_{header} {}
+
+  /**
+   * Get request header
+   *
+   * @return request header
+   */
+  inline const header_t& header() const noexcept { return header_; }
+
+  /**
+   * Get request header
+   *
+   * @return request header
+   */
+  inline const constants::function_code& function() const noexcept {
+    return function_;
+  }
+
+ private:
+  /**
+   * Request header
+   */
+  const header_t header_;
+  /**
+   * Function code
+   */
+  const constants::function_code function_;
+};
+
 template <constants::exception_code modbus_exception>
-class specification : public std::domain_error {
+class specification : public specification_error {
   static_assert(
       modbus_exception >= constants::exception_code::illegal_function &&
       modbus_exception <=
@@ -54,8 +121,20 @@ class specification : public std::domain_error {
  public:
   /**
    * Specification exception constructor
+   *
+   * @param function       modbus function
+   * @param request_header request header
    */
-  specification() : std::domain_error{message()} {}
+  explicit specification(constants::function_code function,
+                         const header_t&          header) noexcept
+      : specification_error{modbus_exception, function, header} {}
+
+  /**
+   * Exception explanation
+   *
+   * @return explanation of exception
+   */
+  virtual const char* what() const noexcept override { return message(); }
 
  private:
   /**
@@ -97,15 +176,24 @@ class specification : public std::domain_error {
 };
 
 template <constants::exception_code modbus_exception>
-class internal : public std::domain_error {
+class internal : public base_error {
   static_assert(modbus_exception >= constants::exception_code::bad_data &&
                 modbus_exception <= constants::exception_code::no_exception);
 
  public:
   /**
    * Internal exception constructor
+   *
+   * @param request_header request header
    */
-  internal() : std::domain_error{message()} {}
+  internal() : base_error{modbus_exception} {}
+
+  /**
+   * Exception explanation
+   *
+   * @return explanation of exception
+   */
+  virtual const char* what() const noexcept override { return message(); }
 
  private:
   /**
@@ -131,9 +219,38 @@ class internal : public std::domain_error {
     }
   }
 };
-
 }  // namespace ex
+
+static void throw_exception(constants::exception_code ec,
+                            constants::function_code  function,
+                            const header_t&           request_header) {
+  switch (ec) {
+    case constants::exception_code::illegal_function:
+      throw ex::illegal_function(function, request_header);
+    case constants::exception_code::illegal_data_address:
+      throw ex::illegal_data_address(function, request_header);
+    case constants::exception_code::illegal_data_value:
+      throw ex::illegal_data_value(function, request_header);
+    case constants::exception_code::server_device_failure:
+      throw ex::server_device_failure(function, request_header);
+    case constants::exception_code::acknowledge:
+      throw ex::acknowledge(function, request_header);
+    case constants::exception_code::server_device_busy:
+      throw ex::server_device_busy(function, request_header);
+    case constants::exception_code::negative_acknowledge:
+      throw ex::negative_acknowledge(function, request_header);
+    case constants::exception_code::memory_parity_error:
+      throw ex::memory_parity_error(function, request_header);
+    case constants::exception_code::gateway_path_unavailable:
+      throw ex::gateway_path_unavailable(function, request_header);
+    case constants::exception_code::gateway_target_device_failed_to_respond:
+      throw ex::gateway_target_device_failed_to_respond(function,
+                                                        request_header);
+    default:
+      throw ex::bad_exception();
+  }
 }
+}  // namespace modbus
 
 #endif // LIB_MODBUS_MODBUS_EXCEPTION_HPP_
 

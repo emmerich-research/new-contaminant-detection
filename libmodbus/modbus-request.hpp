@@ -6,6 +6,7 @@
 
 #include "modbus-adu.hpp"
 #include "modbus-constants.hpp"
+#include "modbus-logger.hpp"
 #include "modbus-types.hpp"
 
 #include "modbus-response.hpp"
@@ -14,39 +15,41 @@ namespace modbus {
 // forward declarations
 class table;
 namespace internal {
-template <constants::function_code modbus_function>
 class request;
 }
 
 namespace internal {
-template <constants::function_code modbus_function>
-class request : public adu<modbus_function> {
+class request : public adu {
  public:
   /**
    * Initializer
    */
-  using typename adu<modbus_function>::initializer_t;
+  using typename adu::initializer_t;
 
   /**
-   * Request constructor
+   * Decode string_view
    */
-  explicit request();
+  using adu::decode;
 
   /**
    * Request constructor
    *
+   * @param function    modbus function
    * @param transaction transaction id
    * @param unit        unit id
    */
-  explicit request(std::uint16_t transaction,
-                   std::uint8_t  unit);
+  explicit request(constants::function_code function,
+                   std::uint16_t            transaction = 0x00,
+                   std::uint8_t             unit = 0x00);
 
   /**
    * Request constructor
    *
+   * @param function    modbus function
    * @param initializer initializer
    */
-  explicit request(const initializer_t& initializer);
+  explicit request(constants::function_code function,
+                   const initializer_t&     initializer);
 
   /**
    * Execute on data store / mapping
@@ -55,16 +58,24 @@ class request : public adu<modbus_function> {
    *
    * @return modbus response
    */
-  virtual typename response<modbus_function>::pointer execute(
-      table& data_table) = 0;
+  virtual typename response::pointer execute(table& data_table) = 0;
 
   /**
    * Get response size for error checking on client
    *
    * @return response size
    */
-  inline virtual typename internal::packet_t::size_type response_size() const {
+  inline virtual typename packet_t::size_type response_size() const {
     return 0;
+  }
+
+  /**
+   * Check if response packet is mismatch with expected packet size
+   */
+  inline bool check_response_packet(const packet_t& packet) const {
+    logger::get()->debug("packet_size {} response_size {}", packet.size(),
+                         response_size());
+    return packet.size() == response_size();
   }
 };
 }  // namespace internal

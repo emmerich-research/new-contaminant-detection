@@ -12,17 +12,15 @@
 
 #include "modbus-adu.hpp"
 #include "modbus-constants.hpp"
-#include "modbus-exception.hpp"
 #include "modbus-types.hpp"
 
-#include "modbus-bit-read.hpp"
+#include "modbus-request-handler.hpp"
 
 namespace modbus {
-server::server(std::size_t concurrency)
+server::server(table::pointer data_table, std::size_t concurrency)
     : server_{constants::max_adu_length, constants::max_adu_length,
               concurrency},
-      data_table_{},
-      req_handler_{&data_table_},
+      data_table_{std::move(data_table)},
       on_connect_cb_{[](auto&, auto&) {}},
       on_disconnect_cb_{[](auto&, auto&) {}} {
   server_.bind_start(std::bind(&server::on_start, this, std::placeholders::_1))
@@ -50,7 +48,7 @@ void server::on_stop(asio::error_code ec) {
 
 void server::on_connect(session_ptr_t& session_ptr) {
   session_ptr->no_delay(true);
-  on_connect_cb_(session_ptr, data_table_);
+  on_connect_cb_(session_ptr, *data_table_);
   logger::get()->debug("client enters: {} {} {} {}",
                        session_ptr->remote_address(),
                        session_ptr->remote_port(), session_ptr->local_address(),
@@ -58,25 +56,29 @@ void server::on_connect(session_ptr_t& session_ptr) {
 }
 
 void server::on_disconnect(session_ptr_t& session_ptr) {
-  on_disconnect_cb_(session_ptr, data_table_);
+  on_disconnect_cb_(session_ptr, *data_table_);
   logger::get()->debug("client leaves: {} {} {}", session_ptr->remote_address(),
                        session_ptr->remote_port(), asio2::last_error_msg());
 }
 
 void server::on_receive(session_ptr_t&   session_ptr,
                         std::string_view raw_packet) {
-  auto response = req_handler_.handle(raw_packet);
+  auto response = request_handler::handle(*data_table_, raw_packet);
 
-#ifndef DEBUG_ON
+#ifdef DEBUG_ON
   logger::get()->debug("[Response, {}]", utilities::packet_str(response));
 #endif
 
-  session_ptr->send(response, [](std::size_t bytes_sent) {
-    logger::get()->debug("bytes sent {}", bytes_sent);
-  });
+  if (!response.empty()) {
+    session_ptr->send(response, []([[maybe_unused]] std::size_t bytes_sent) {
+#ifdef DEBUG_ON
+      logger::get()->debug("bytes sent {}", bytes_sent);
+#endif
+    });
+  }
 }
 
-void server::run(std::string_view port) {
-  server_.start("0.0.0.0", port);
+void server::run(std::string_view host, std::string_view port) {
+  server_.start(host, port);
 }
 }  // namespace modbus

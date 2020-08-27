@@ -16,24 +16,32 @@
 #include <libmodbus/modbus.hpp>
 #include <libutil/util.hpp>
 
-static void cout_bytes(const modbus::internal::packet_t& packet) {
-  modbus::internal::packet_t::size_type index = 0;
+static void cout_bytes(const modbus::packet_t& packet) {
+  LOG_DEBUG("[Packet, {}]", modbus::utilities::packet_str(packet));
+}
 
-  std::string s = "[Packet, ";
+class client_logger : public modbus::logger {
+ public:
+  explicit client_logger(bool debug = false) : modbus::logger(debug) {}
 
-  for (unsigned byte : packet) {
-    index++;
-    if (index < packet.size()) {
-      s += fmt::format("{:#04x} ", byte);
-    } else {
-      s += fmt::format("{:#04x}", byte);
+  virtual ~client_logger() override {}
+
+  inline virtual void error(
+      const std::string& message) const noexcept override {
+    LOG_ERROR("{}", message);
+  }
+
+  inline virtual void debug(
+      const std::string& message) const noexcept override {
+    if (debug_) {
+      LOG_DEBUG("{}", message);
     }
   }
 
-  s += "]";
-
-  LOG_DEBUG("{}", s);
-}
+  inline virtual void info(const std::string& message) const noexcept override {
+    LOG_INFO("{}", message);
+  }
+};
 
 int main(int argc, char* argv[]) {
   USE_NAMESPACE
@@ -49,10 +57,13 @@ int main(int argc, char* argv[]) {
       return ATM_ERR;
     }
 
+    modbus::logger::create<client_logger>(true);
     asio2::tcp_client client;
 
-    modbus::request::read_coils req_read_coils{modbus::address_t{0x00},
-                                               modbus::num_bits_t{1}};
+    modbus::request::read_coils req_read_coils{
+        modbus::address_t{0x00},
+        // modbus::num_bits_t{modbus::num_bits_t::constant<0x7D0>{}}
+        modbus::num_bits_t{0x7D0}};
 
     req_read_coils.initialize({0x1234, 0x01});
 
@@ -77,12 +88,19 @@ int main(int argc, char* argv[]) {
           LOG_DEBUG("disconnect : {} {}", asio2::last_error_val(),
                     asio2::last_error_msg());
         })
-        .bind_recv([&](std::string_view sv) {
-          modbus::internal::packet_t packet{sv.begin(), sv.end()};
-          cout_bytes(packet);
-          modbus::response::read_coils response{&req_read_coils};
-          response.decode(packet);
-          LOG_DEBUG("{}", response.bits());
+        .bind_recv([&](std::string_view packet) {
+          try {
+            // cout_bytes(packet);
+            modbus::response::read_coils response{&req_read_coils};
+            response.decode(packet);
+            // LOG_DEBUG("{}", response.bits());
+          } catch (const modbus::ex::specification_error& exc) {
+            LOG_ERROR("Modbus exception occured {}", exc.what());
+          } catch (const modbus::ex::base_error& exc) {
+            LOG_ERROR("Internal exception occured {}", exc.what());
+          } catch (const std::exception& exc) {
+            LOG_ERROR("Unintended exception occured {}", exc.what());
+          }
         });
 
     // client.start(argv[1], argv[2]);

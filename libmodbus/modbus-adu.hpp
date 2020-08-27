@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <string_view>
 #include <type_traits>
 
 #include <fmt/core.h>
@@ -15,7 +16,6 @@
 namespace modbus {
 // forward declarations
 namespace internal {
-template <constants::function_code modbus_function>
 class adu;
 }
 
@@ -36,7 +36,6 @@ namespace internal {
  * --- Function (1 byte)
  * --- Rest of data... (N byte)
  */
-template <constants::function_code modbus_function>
 class adu {
  public:
   /**
@@ -50,7 +49,7 @@ class adu {
     /**
      * Unit
      */
-    std::uint16_t unit;
+    std::uint8_t unit;
   };
 
   /**
@@ -61,25 +60,59 @@ class adu {
   /**
    * ADU constructor
    *
+   * @param function_code modbus function code
+   * @param transaction   transaction id
+   * @param unit          unit id
+   */
+  explicit adu(std::uint8_t  function_code,
+               std::uint16_t transaction = 0x00,
+               std::uint8_t  unit = 0x00) noexcept;
+
+  /**
+   * ADU constructor
+   *
+   * @param function    modbus function
    * @param transaction transaction id
    * @param unit        unit id
    */
-  explicit adu(std::uint16_t transaction,
-               std::uint8_t  unit) noexcept;
+  explicit adu(constants::function_code function,
+               std::uint16_t            transaction = 0x00,
+               std::uint8_t             unit = 0x00) noexcept;
 
   /**
    * ADU constructor
    *
+   * @param function_code modbus function code
+   * @param initializer   initializer
+   */
+  explicit adu(std::uint8_t         function_code,
+               const initializer_t& initializer) noexcept;
+
+  /**
+   * ADU constructor
+   *
+   * @param function    modbus function
    * @param initializer initializer
    */
-  explicit adu(const initializer_t& initializer) noexcept;
+  explicit adu(constants::function_code function,
+               const initializer_t&     initializer) noexcept;
 
   /**
    * ADU constructor
    *
+   * @param function_code modbus function code
    * @param m_header  header struct
    */
-  explicit adu(const header_t& m_header) noexcept;
+  explicit adu(std::uint8_t function_code, const header_t& m_header) noexcept;
+
+  /**
+   * ADU constructor
+   *
+   * @param function  modbus function
+   * @param m_header  header struct
+   */
+  explicit adu(constants::function_code function,
+               const header_t&          m_header) noexcept;
 
  public:
   /**
@@ -88,6 +121,13 @@ class adu {
    * @return packet that has been encoded
    */
   virtual packet_t encode() = 0;
+
+  /**
+   * Decode packet
+   *
+   * @param packet packet to be decoded
+   */
+  virtual void decode(std::string_view packet);
 
   /**
    * Decode packet
@@ -103,9 +143,7 @@ class adu {
    *
    * @return function code
    */
-  inline constexpr constants::function_code function() const {
-    return modbus_function;
-  }
+  inline constants::function_code function() const { return function_; }
 
   /**
    * Get transaction id
@@ -126,14 +164,14 @@ class adu {
    *
    * @return unit id
    */
-  inline std::uint16_t unit() const { return unit_; }
+  inline std::uint8_t unit() const { return unit_; }
 
   /**
    * Get header
    *
    * @return header
    */
-  inline header_t header() const { return {transaction(), length(), unit()}; }
+  header_t header() const { return {transaction(), length(), unit()}; }
 
   /** Setter */
 
@@ -144,7 +182,7 @@ class adu {
    *
    * @return instance of ADU
    */
-  inline adu& initialize(const initializer_t& initializer);
+  adu& initialize(const initializer_t& initializer);
 
   /**
    * Set header
@@ -153,7 +191,7 @@ class adu {
    *
    * @return instance of ADU
    */
-  inline adu& header(const header_t& m_header);
+  adu& header(const header_t& m_header);
 
   /**
    * Set transaction id
@@ -162,7 +200,7 @@ class adu {
    *
    * @return instance of ADU
    */
-  inline adu& transaction(std::uint16_t new_transaction);
+  adu& transaction(std::uint16_t new_transaction);
 
   /**
    * Calculate length of ADU given PDU length
@@ -171,7 +209,7 @@ class adu {
    *
    * @return instance of ADU
    */
-  inline adu& calc_length(const internal::packet_t::size_type& pdu_length);
+  adu& calc_length(std::uint16_t pdu_length);
 
   /**
    * Set length of ADU
@@ -180,7 +218,7 @@ class adu {
    *
    * @return instance of ADU
    */
-  inline adu& length(std::uint16_t new_length);
+  adu& length(std::uint16_t new_length);
 
   /**
    * Set unit id
@@ -189,7 +227,7 @@ class adu {
    *
    * @return instance of ADU
    */
-  inline adu& unit(std::uint8_t new_unit);
+  adu& unit(std::uint8_t new_unit);
 
   /** Operator */
   /**
@@ -199,7 +237,7 @@ class adu {
    *
    * @return true if transaction_id is equal to other transaction_id
    */
-  inline bool operator==(const adu& other) const;
+  bool operator==(const adu& other) const;
 
   /**
    * Less-than operator
@@ -208,7 +246,7 @@ class adu {
    *
    * @return true if transaction_id is less than other transaction_id
    */
-  inline bool operator<(const adu& other) const;
+  bool operator<(const adu& other) const;
 
   /**
    * More-than operator
@@ -217,7 +255,7 @@ class adu {
    *
    * @return true if transaction_id is more than other transaction_id
    */
-  inline bool operator>(const adu& other) const;
+  bool operator>(const adu& other) const;
 
   /**
    * Dump to string
@@ -226,7 +264,7 @@ class adu {
    *
    * @return ostream
    */
-  inline virtual std::ostream& dump(std::ostream& os) const;
+  virtual std::ostream& dump(std::ostream& os) const;
 
   /**
    * Ostream operator
@@ -256,7 +294,7 @@ class adu {
    *
    * @return packet consists of header
    */
-  inline packet_t header_packet();
+  packet_t header_packet();
 
   /**
    * Response size
@@ -265,45 +303,48 @@ class adu {
    *
    * @return ADU length
    */
-  inline static constexpr typename internal::packet_t::size_type
-  calc_adu_length(const internal::packet_t::size_type& pdu_length);
+  static constexpr std::uint16_t calc_adu_length(std::uint16_t pdu_length);
 
  public:
   /**
    * Header length
    */
-  static constexpr typename internal::packet_t::size_type header_length = 7;
+  static constexpr typename packet_t::size_type header_length = 7;
 
  protected:
   /**
    * Protocol ID
    */
   static constexpr std::uint16_t protocol = constants::tcp_protocol;
-  /**
-   * Function code
-   */
-  static constexpr std::underlying_type_t<constants::function_code>
-      function_code = utilities::to_underlying(modbus_function);
+
   /**
    * Length index
    */
-  static constexpr typename internal::packet_t::size_type length_idx = 4;
+  static constexpr typename packet_t::size_type length_idx = 4;
   /**
    * Max length
    */
-  static constexpr typename internal::packet_t::size_type max_length =
+  static constexpr typename packet_t::size_type max_length =
       constants::max_adu_length;
   /**
    * Max PDU length
    */
-  static constexpr typename internal::packet_t::size_type max_pdu_size =
+  static constexpr typename packet_t::size_type max_pdu_size =
       max_length - header_length;
-
- protected:
   /**
    * Header struct with function format
    */
   static constexpr std::string_view header_func_format = "HHHBB";
+
+ protected:
+  /**
+   * Function
+   */
+  constants::function_code function_;
+  /**
+   * Function code
+   */
+  std::underlying_type_t<constants::function_code> function_code_;
   /**
    * Transaction id
    */

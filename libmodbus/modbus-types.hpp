@@ -6,6 +6,9 @@
 #include <type_traits>
 #include <vector>
 
+#include <fmt/compile.h>
+#include <fmt/format.h>
+
 #include "modbus-constants.hpp"
 
 namespace modbus {
@@ -28,7 +31,6 @@ struct header_t {
   std::uint8_t unit = 0;
 };
 
-namespace internal {
 /**
  * Packet type
  */
@@ -38,6 +40,7 @@ typedef std::vector<char> packet_t;
  */
 typedef char* base_packet_t;
 
+namespace internal {
 /**
  * Base metadata
  *
@@ -46,6 +49,18 @@ typedef char* base_packet_t;
 template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
 class base_metadata_t {
  public:
+  template <T Value>
+  using constant = std::integral_constant<T, Value>;
+
+  /**
+   * base_metadata constructor
+   *
+   * @param value value to set
+   */
+  template <T Value>
+  inline explicit constexpr base_metadata_t(constant<Value>) noexcept
+      : value_{Value} {}
+
   /**
    * base_metadata constructor
    *
@@ -242,15 +257,8 @@ using address_t = internal::base_metadata_t<std::uint16_t>;
 
 class num_bits_t : public internal::base_metadata_t<std::uint16_t> {
  public:
-  /**
-   * num_bits constructor
-   *
-   * @param value value to set
-   *
-   * @return true if pass the test
-   */
-  inline explicit num_bits_t(std::uint16_t value = 0) noexcept
-      : internal::base_metadata_t<std::uint16_t>{value} {}
+  using internal::base_metadata_t<std::uint16_t>::constant;
+  using internal::base_metadata_t<std::uint16_t>::get;
 
   /**
    * Validate value
@@ -262,19 +270,46 @@ class num_bits_t : public internal::base_metadata_t<std::uint16_t> {
   inline static constexpr bool validate(std::uint16_t value) noexcept {
     return value > 0 && value <= constants::max_num_bits_read;
   }
+
+  /**
+   * num_regs constructor
+   *
+   * @param value         value to set
+   */
+  template <std::uint16_t Value>
+  inline constexpr explicit num_bits_t(constant<Value> value)
+      : internal::base_metadata_t<std::uint16_t>{value} {
+    static_assert(validate(Value), "Num bits value is not valid");
+  }
+
+  /**
+   * num_bits constructor
+   *
+   * @param value         value to set
+   * @param do_validation do validation
+   */
+  inline explicit num_bits_t(std::uint16_t value = 0,
+                             bool          do_validation = false)
+      : internal::base_metadata_t<std::uint16_t>{value} {
+    if (do_validation && !validate(value)) {
+      throw std::out_of_range(fmt::format(
+          "Num bits must less than {} ({:#04x})", constants::max_num_bits_read,
+          constants::max_num_bits_read));
+    }
+  }
+
+  /**
+   * Validate value
+   *
+   * @return true if valid
+   */
+  inline bool validate() noexcept { return validate(get()); }
 };
 
 class num_regs_t : public internal::base_metadata_t<std::uint16_t> {
  public:
-  /**
-   * num_regs constructor
-   *
-   * @param value value to set
-   *
-   * @return true if pass the test
-   */
-  inline explicit num_regs_t(std::uint16_t value = 0) noexcept
-      : internal::base_metadata_t<std::uint16_t>{value} {}
+  using internal::base_metadata_t<std::uint16_t>::constant;
+  using internal::base_metadata_t<std::uint16_t>::get;
 
   /**
    * Validate value
@@ -286,6 +321,40 @@ class num_regs_t : public internal::base_metadata_t<std::uint16_t> {
   inline static constexpr bool validate(std::uint16_t value) noexcept {
     return value > 0 && value <= constants::max_num_regs_read;
   }
+
+  /**
+   * num_regs constructor
+   *
+   * @param value         value to set
+   */
+  template <std::uint16_t Value>
+  inline constexpr explicit num_regs_t(constant<Value> value)
+      : internal::base_metadata_t<std::uint16_t>{value} {
+    static_assert(validate(Value), "Num regs value is not valid");
+  }
+
+  /**
+   * num_regs constructor
+   *
+   * @param value         value to set
+   * @param do_validation do validation
+   */
+  inline constexpr explicit num_regs_t(std::uint16_t value = 0,
+                                       bool          do_validation = false)
+      : internal::base_metadata_t<std::uint16_t>{value} {
+    if (do_validation && !validate(value)) {
+      throw std::out_of_range(fmt::format(
+          "Num regs must less than {} ({:#04x})", constants::max_num_regs_read,
+          constants::max_num_regs_read));
+    }
+  }
+
+  /**
+   * Validate value
+   *
+   * @return true if valid
+   */
+  inline bool validate() noexcept { return validate(get()); }
 };
 }  // namespace modbus
 

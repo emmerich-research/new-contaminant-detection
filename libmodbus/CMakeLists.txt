@@ -9,10 +9,11 @@ ucm_add_files(
 
   "modbus-data-table.cpp"
 
-  "modbus-bit-read.cpp"
+  "modbus-adu.cpp"
+  "modbus-request.cpp"
+  "modbus-response.cpp"
 
-  "modbus-connection.cpp"
-  "modbus-connection-manager.cpp"
+  "modbus-bit-read.cpp"
 
   "modbus-request-handler.cpp"
   "modbus-server.cpp"
