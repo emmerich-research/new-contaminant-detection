@@ -21,7 +21,7 @@ class request_handler : private boost::noncopyable {
    *
    * @return packet to send
    */
-  static packet_t handle(table& data_table, const std::string_view& packet);
+  static packet_t handle(table* data_table, const std::string_view& packet);
   /**
    * Handle request
    *
@@ -30,7 +30,7 @@ class request_handler : private boost::noncopyable {
    *
    * @return packet to send
    */
-  static packet_t handle(table& data_table, const packet_t& packet);
+  static packet_t handle(table* data_table, const packet_t& packet);
 };
 }  // namespace modbus
 

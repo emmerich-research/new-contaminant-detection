@@ -57,8 +57,8 @@ std::ostream& base_read_bits<constants::function_code::read_coils>::dump(
     std::ostream& os) const {
   fmt::print(os,
              "RequestReadCoils(header[transaction={:#04x}, protocol={:#04x}, "
-             "function={:#04x}, unit={:#04x}], pdu[address={:#04x}, count={}])",
-             transaction_, protocol, function_code_, unit_, address()(),
+             "unit={:#04x}], pdu[function={:#04x}, address={:#04x}, count={}])",
+             transaction_, protocol, unit_, function_code_, address()(),
              count());
   return os;
 }
@@ -66,17 +66,17 @@ std::ostream& base_read_bits<constants::function_code::read_coils>::dump(
 template <>
 typename internal::response::pointer
 base_read_bits<constants::function_code::read_coils>::execute(
-    table& data_table) {
+    table* data_table) {
   if (!count_.validate()) {
     throw ex::illegal_data_value(function(), header());
   }
 
-  if (!data_table.coils().validate(address_, count_)) {
+  if (!data_table->coils().validate(address_, count_)) {
     throw ex::illegal_data_address(function(), header());
   }
 
   return response::base_read_bits<constants::function_code::read_coils>::create(
-      this, &data_table);
+      this, data_table);
 }
 
 template <>
@@ -86,26 +86,25 @@ base_read_bits<constants::function_code::read_discrete_inputs>::dump(
   fmt::print(
       os,
       "RequestReadDiscreteInputs(header[transaction={:#04x}, protocol={:#04x}, "
-      "function={:#04x}, unit={:#04x}], pdu[address={:#04x}, count={}])",
-      transaction_, protocol, function_code_, unit_, address()(), count());
+      "unit={:#04x}], pdu[function={:#04x}, address={:#04x}, count={}])",
+      transaction_, protocol, unit_, function_code_, address()(), count());
   return os;
 }
 
 template <>
 typename internal::response::pointer
 base_read_bits<constants::function_code::read_discrete_inputs>::execute(
-    table& data_table) {
+    table* data_table) {
   if (!count_.validate()) {
     throw ex::illegal_data_value(function(), header());
   }
 
-  if (!data_table.discrete_inputs().validate(address_, count_)) {
+  if (!data_table->discrete_inputs().validate(address_, count_)) {
     throw ex::illegal_data_address(function(), header());
   }
 
   return response::base_read_bits<
-      constants::function_code::read_discrete_inputs>::create(this,
-                                                              &data_table);
+      constants::function_code::read_discrete_inputs>::create(this, data_table);
 }
 }  // namespace request
 
@@ -115,9 +114,9 @@ std::ostream& base_read_bits<constants::function_code::read_coils>::dump(
     std::ostream& os) const {
   fmt::print(os,
              "ResponseReadCoils(header[transaction={:#04x}, protocol={:#04x}, "
-             "function={:#04x}, unit={:#04x}], pdu[address={:#04x}, "
+             "unit={:#04x}], pdu[function={:#04x}, address={:#04x}, "
              "count={}, bits_size={}])",
-             transaction_, protocol, function_code_, unit_,
+             transaction_, protocol, unit_, function_code_,
              request_->address()(), request_->count(), bits_.size());
   return os;
 }
@@ -157,9 +156,9 @@ base_read_bits<constants::function_code::read_discrete_inputs>::dump(
   fmt::print(os,
              "ResponseReadDiscreteInputs(header[transaction={:#04x}, "
              "protocol={:#04x}, "
-             "function={:#04x}, unit={:#04x}], pdu[address={:#04x}, "
+             "unit={:#04x}], pdu[function={:#04x}, address={:#04x}, "
              "count={}, bits_size={}])",
-             transaction_, protocol, function_code_, unit_,
+             transaction_, protocol, unit_, function_code_,
              request_->address()(), request_->count(), bits_.size());
   return os;
 }
@@ -192,6 +191,5 @@ base_read_bits<constants::function_code::read_discrete_inputs>::encode() {
     throw ex::server_device_failure(function(), header());
   }
 }
-
 }  // namespace response
 }  // namespace modbus

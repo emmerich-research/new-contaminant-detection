@@ -14,6 +14,7 @@ ucm_add_files(
   "modbus-response.cpp"
 
   "modbus-bit-read.cpp"
+  "modbus-bit-write.cpp"
 
   "modbus-request-handler.cpp"
   "modbus-server.cpp"

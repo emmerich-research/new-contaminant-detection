@@ -60,15 +60,17 @@ int main(int argc, char* argv[]) {
     modbus::logger::create<client_logger>(true);
     asio2::tcp_client client;
 
-    modbus::request::read_coils req_read_coils{
-        modbus::address_t{0x00},
-        // modbus::num_bits_t{modbus::num_bits_t::constant<0x7D0>{}}
-        modbus::num_bits_t{0x7D0}};
+    /*modbus::request::read_coils req_read_coils{*/
+    // modbus::address_t{0x00},
+    //// modbus::num_bits_t{modbus::num_bits_t::constant<0x7D0>{}}
+    // modbus::num_bits_t{0x7D0}};
 
-    req_read_coils.initialize({0x1234, 0x01});
-    LOG_DEBUG("{}", req_read_coils);
+    /*req_read_coils.initialize({0x1234, 0x01});*/
 
-    auto request = req_read_coils.encode();
+    modbus::request::write_single_coil req;
+    req.initialize({0x1234, 0x01});
+
+    auto request = req.encode();
 
     client.auto_reconnect(true, std::chrono::milliseconds(1000));
     // client.start_timer(1, std::chrono::seconds(1), []() {});
@@ -92,7 +94,7 @@ int main(int argc, char* argv[]) {
         .bind_recv([&](std::string_view packet) {
           try {
             // cout_bytes(packet);
-            modbus::response::read_coils response{&req_read_coils};
+            modbus::response::write_single_coil response{&req};
             response.decode(packet);
           } catch (const modbus::ex::specification_error& exc) {
             LOG_ERROR("Modbus exception occured {}", exc.what());

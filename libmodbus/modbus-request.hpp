@@ -58,7 +58,7 @@ class request : public adu {
    *
    * @return modbus response
    */
-  virtual typename response::pointer execute(table& data_table) = 0;
+  virtual typename response::pointer execute(table* data_table) = 0;
 
   /**
    * Get response size for error checking on client

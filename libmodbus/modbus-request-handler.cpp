@@ -12,18 +12,19 @@
 #include "modbus-utilities.hpp"
 
 #include "modbus-adu.hpp"
-
-#include "modbus-bit-read.hpp"
 #include "modbus-response.hpp"
 
+#include "modbus-bit-read.hpp"
+#include "modbus-bit-write.hpp"
+
 namespace modbus {
-packet_t request_handler::handle(table&                  data_table,
+packet_t request_handler::handle(table*                  data_table,
                                  const std::string_view& packet) {
   packet_t pack{packet.begin(), packet.end()};
   return handle(data_table, pack);
 }
 
-packet_t request_handler::handle(table& data_table, const packet_t& packet) {
+packet_t request_handler::handle(table* data_table, const packet_t& packet) {
   constexpr auto header_length = internal::adu::header_length;
 
   try {
@@ -56,6 +57,10 @@ packet_t request_handler::handle(table& data_table, const packet_t& packet) {
       } break;
 
       case constants::function_code::write_single_coil: {
+        request::write_single_coil req;
+        req.decode(packet);
+        auto&& res = req.execute(data_table);
+        return res->encode();
       } break;
 
       case constants::function_code::write_single_register: {

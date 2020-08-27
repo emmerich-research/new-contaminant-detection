@@ -63,7 +63,7 @@ void server::on_disconnect(session_ptr_t& session_ptr) {
 
 void server::on_receive(session_ptr_t&   session_ptr,
                         std::string_view raw_packet) {
-  auto response = request_handler::handle(*data_table_, raw_packet);
+  auto response = request_handler::handle(data_table_.get(), raw_packet);
 
 #ifdef DEBUG_ON
   logger::get()->debug("[Response, {}]", utilities::packet_str(response));

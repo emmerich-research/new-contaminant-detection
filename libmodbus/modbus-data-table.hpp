@@ -71,6 +71,11 @@ class base {
   typedef typename container_type::size_type size_type;
 
   /**
+   * Const reference
+   */
+  typedef typename container_type::const_reference const_reference;
+
+  /**
    * Max capacity
    */
   static constexpr size_type max_capacity = 65535;
@@ -104,6 +109,15 @@ class base {
    */
   virtual slice_type get(const address_t& address,
                          const count_t&   count) const = 0;
+
+  /**
+   * Get single value from container
+   *
+   * @param address starting address
+   *
+   * @return single value from container
+   */
+  virtual const_reference get(const address_t& address) const = 0;
 
   /**
    * Set slice of data from container
@@ -264,6 +278,11 @@ class sequential : public base<std::vector, data_t, count_t> {
   using typename base<std::vector, data_t, count_t>::size_type;
 
   /**
+   * Const reference
+   */
+  using typename base<std::vector, data_t, count_t>::const_reference;
+
+  /**
    * Container max capacity
    */
   using base<std::vector, data_t, count_t>::max_capacity;
@@ -331,6 +350,15 @@ class sequential : public base<std::vector, data_t, count_t> {
 
   inline virtual slice_type get(const address_t& address,
                                 const count_t&   count) const override;
+
+  /**
+   * Get single value from container
+   *
+   * @param address starting address
+   *
+   * @return single value from container
+   */
+  inline virtual const_reference get(const address_t& address) const override;
 
   /**
    * Set slice of data from container
@@ -437,12 +465,12 @@ class table {
   /**
    * Pointer type
    */
-  typedef std::shared_ptr<table> pointer;
+  typedef std::unique_ptr<table> pointer;
 
   /**
-   * Create shared pointer of table
+   * Create smart pointer of table
    */
-  MAKE_STD_SHARED(table)
+  MAKE_STD_UNIQUE(table)
 
   /**
    * Table initializer

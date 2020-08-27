@@ -86,6 +86,8 @@
 #include "modbus-bit-read.hpp"
 #include "modbus-bit-read.inline.hpp"
 
+#include "modbus-bit-write.hpp"
+
 #include "modbus-request-handler.hpp"
 
 #include "modbus-server.hpp"

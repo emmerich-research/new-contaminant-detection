@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <iostream>
 #include <thread>
+#include <utility>
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -46,14 +47,14 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] const char** argv) {
 
   modbus::logger::create<server_logger>(true);
 
-  auto data_table = modbus::table::create();
-  /* modbus::table::initializer_t{{modbus::address_t{0x00}, 10, false}} */
-
-  auto&& server = modbus::server::create(data_table);
+  auto&& data_table = modbus::table::create();
+  auto&& server = modbus::server::create(std::move(data_table));
 
   server->bind_connect([](auto& session_ptr, [[maybe_unused]] auto& table) {
-    session_ptr->start_timer(1, std::chrono::seconds(1),
-                             []() { /* creating heartbeat */ });
+    /*session_ptr->start_timer(1, std::chrono::seconds(1), [&table]() {*/
+    // LOG_INFO("Coils addr 0x00: {}",
+    // table.coils().get(modbus::address_t{0x00}));
+    /*});*/
   });
 
   server->run();

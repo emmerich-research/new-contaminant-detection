@@ -53,21 +53,41 @@ class base_metadata_t {
   using constant = std::integral_constant<T, Value>;
 
   /**
-   * base_metadata constructor
+   * Validate value
    *
-   * @param value value to set
+   * @param value value to test
+   *
+   * @return true if pass the test
    */
-  template <T Value>
-  inline explicit constexpr base_metadata_t(constant<Value>) noexcept
-      : value_{Value} {}
+  inline static constexpr bool validate(T value) noexcept {
+    return value >= 0 && value <= constants::max_address;
+  }
 
   /**
    * base_metadata constructor
    *
    * @param value value to set
    */
-  inline explicit constexpr base_metadata_t(T value = 0) noexcept
-      : value_{value} {}
+  template <T Value>
+  inline explicit constexpr base_metadata_t(constant<Value>) noexcept
+      : value_{Value} {
+    static_assert(validate(Value));
+  }
+
+  /**
+   * base_metadata constructor
+   *
+   * @param value value to set
+   */
+  inline explicit constexpr base_metadata_t(T    value = 0,
+                                            bool do_validation = false) {
+    if (do_validation && !validate(value)) {
+      throw std::out_of_range(fmt::format("Must less than {} ({:#04x})",
+                                          constants::max_address,
+                                          constants::max_address));
+    }
+    value_ = value;
+  }
 
   /**
    * Get reference of value
@@ -219,17 +239,6 @@ class base_metadata_t {
   }
 
   /**
-   * Validate value
-   *
-   * @param value value to test
-   *
-   * @return true if pass the test
-   */
-  inline static constexpr bool validate([[maybe_unused]] T value) noexcept {
-    return true;
-  }
-
-  /**
    * Ostream operator
    *
    * @param os  ostream
@@ -241,6 +250,13 @@ class base_metadata_t {
   inline friend ostream& operator<<(ostream& os, const base_metadata_t& obj) {
     return os << obj();
   }
+
+  /**
+   * Validate value
+   *
+   * @return true if valid
+   */
+  inline bool validate() noexcept { return validate(get()); }
 
  private:
   /**
@@ -259,6 +275,7 @@ class num_bits_t : public internal::base_metadata_t<std::uint16_t> {
  public:
   using internal::base_metadata_t<std::uint16_t>::constant;
   using internal::base_metadata_t<std::uint16_t>::get;
+  using internal::base_metadata_t<std::uint16_t>::validate;
 
   /**
    * Validate value
@@ -288,28 +305,22 @@ class num_bits_t : public internal::base_metadata_t<std::uint16_t> {
    * @param value         value to set
    * @param do_validation do validation
    */
-  inline explicit num_bits_t(std::uint16_t value = 0,
+  inline explicit num_bits_t(std::uint16_t value = 1,
                              bool          do_validation = false)
-      : internal::base_metadata_t<std::uint16_t>{value} {
+      : internal::base_metadata_t<std::uint16_t>{value, false} {
     if (do_validation && !validate(value)) {
       throw std::out_of_range(fmt::format(
           "Num bits must less than {} ({:#04x})", constants::max_num_bits_read,
           constants::max_num_bits_read));
     }
   }
-
-  /**
-   * Validate value
-   *
-   * @return true if valid
-   */
-  inline bool validate() noexcept { return validate(get()); }
 };
 
 class num_regs_t : public internal::base_metadata_t<std::uint16_t> {
  public:
   using internal::base_metadata_t<std::uint16_t>::constant;
   using internal::base_metadata_t<std::uint16_t>::get;
+  using internal::base_metadata_t<std::uint16_t>::validate;
 
   /**
    * Validate value
@@ -339,22 +350,15 @@ class num_regs_t : public internal::base_metadata_t<std::uint16_t> {
    * @param value         value to set
    * @param do_validation do validation
    */
-  inline constexpr explicit num_regs_t(std::uint16_t value = 0,
+  inline constexpr explicit num_regs_t(std::uint16_t value = 1,
                                        bool          do_validation = false)
-      : internal::base_metadata_t<std::uint16_t>{value} {
+      : internal::base_metadata_t<std::uint16_t>{value, false} {
     if (do_validation && !validate(value)) {
       throw std::out_of_range(fmt::format(
           "Num regs must less than {} ({:#04x})", constants::max_num_regs_read,
           constants::max_num_regs_read));
     }
   }
-
-  /**
-   * Validate value
-   *
-   * @return true if valid
-   */
-  inline bool validate() noexcept { return validate(get()); }
 };
 }  // namespace modbus
 

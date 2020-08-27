@@ -73,8 +73,12 @@ static constexpr std::uint16_t   max_num_bits_read = 0x07D0;
 static constexpr std::uint16_t   max_num_regs_read = 0x007D;
 static constexpr std::uint16_t   max_num_bits_write = 0x07D0;
 static constexpr std::uint16_t   max_num_regs_write = 0x007D;
-
+static constexpr std::uint16_t   max_address = 0xFFFF;
 }  // namespace constants
+
+namespace value {
+enum class bits : std::uint16_t { off = 0x0000, on = 0xFF00 };
+}  // namespace value
 
 static constexpr bool check_function(std::uint8_t function) {
   return static_cast<std::uint8_t>(constants::function_code::min) < function &&
@@ -95,6 +99,11 @@ static constexpr bool check_exception(std::uint8_t exception) {
 static constexpr bool check_function(constants::exception_code exception) {
   return (exception != constants::exception_code::min) &&
          (exception != constants::exception_code::max);
+}
+
+static constexpr bool check_bits_value(std::uint16_t value) {
+  return (value == static_cast<std::uint16_t>(value::bits::off)) ||
+         (value == static_cast<std::uint16_t>(value::bits::on));
 }
 }
 
