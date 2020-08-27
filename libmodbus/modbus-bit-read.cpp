@@ -43,7 +43,7 @@ block::bits::container_type unpack_bits(const packet_t::const_iterator& begin,
 
   for (auto ptr = begin; ptr < end; ++ptr) {
     for (int bit = 0x01; bit & 0xff; bit <<= 1) {
-      result.push_back((*begin & bit) ? true : false);
+      result.push_back(static_cast<block::bits::data_type>(*ptr & bit));
     }
   }
 

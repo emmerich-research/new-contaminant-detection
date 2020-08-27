@@ -70,7 +70,8 @@ template <constants::function_code function_code>
 base_read_bits<function_code>::base_read_bits(
     const request::base_read_bits<function_code>* request,
     table*                                        data_table) noexcept
-    : internal::response{function_code, data_table}, request_{request} {
+    : internal::response{function_code, request->header(), data_table},
+      request_{request} {
   initialize({request_->transaction(), request_->unit()});
 }
 

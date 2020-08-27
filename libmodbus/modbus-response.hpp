@@ -66,9 +66,11 @@ class response : public adu {
    * Response constructor
    *
    * @param function   modbus function
+   * @param req_header request header
    * @param data_table data table pointer
    */
   explicit response(constants::function_code function,
+                    const header_t&          req_header,
                     table*                   data_table = nullptr) noexcept;
 
   /**
@@ -112,6 +114,10 @@ class response : public adu {
 
  protected:
   /**
+   * Request header
+   */
+  header_t req_header_;
+  /**
    * Data table pointer
    */
   table* data_table_;
@@ -142,7 +148,7 @@ class error : private boost::noncopyable, public internal::response {
       typename T,
       typename = std::enable_if<std::is_base_of_v<ex::specification_error, T>>>
   inline explicit error(const T& ec) noexcept
-      : internal::response{ec.function()}, ec_{ec.code()} {
+      : internal::response{ec.function(), ec.header()}, ec_{ec.code()} {
     initialize({ec.header().transaction, ec.header().unit});
   }
 

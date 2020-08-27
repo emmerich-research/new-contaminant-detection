@@ -2,18 +2,23 @@
 
 #include "modbus-response.hpp"
 
+#include <fmt/format.h>
+
 #include "modbus-logger.hpp"
 
 #include "modbus-types.hpp"
 #include "modbus-utilities.hpp"
+
+#include <struc.hpp>
 
 namespace modbus {
 namespace internal {
 response::response() noexcept {}
 
 response::response(constants::function_code function,
+                   const header_t&          req_header,
                    table*                   data_table) noexcept
-    : adu{function}, data_table_{data_table} {}
+    : adu{function}, req_header_{req_header}, data_table_{data_table} {}
 
 bool response::initial_check(const packet_t& packet) {
   return packet.size() > header_length;
@@ -26,10 +31,34 @@ stage response::check_stage(const packet_t& packet) {
     return stage::bad;
   }
 
-  // 2. unpack packet and initialize header metadata
+  std::uint16_t tr, pr, len;
+  std::uint8_t  un, fun;
+
+  struc::unpack(fmt::format(">{}", header_func_format), packet.data(), tr, pr,
+                len, un, fun);
+
+#ifdef DEBUG_ON
+  logger::get()->debug(
+      "Checking header: transaction(req[{:#04x}]=packet[{:#04x}]) "
+      "protocol(req[{:#04x}]=packet[{:#04x}]) "
+      "unit(req[{:#04x}]=packet[{:#04x}]) "
+      "length(expected[{:#04x}]=packet[{:#04x}]",
+      req_header_.transaction, tr, protocol, pr, req_header_.unit, un, len,
+      (packet.size() - (header_length - 1)));
+#endif
+
+  // 2. check transaction, protocol, and unit id
+  if ((req_header_.transaction != tr) || (protocol != pr) ||
+      (req_header_.unit != un) ||
+      (len != (packet.size() - (header_length - 1)))) {
+    // bad packet
+    return stage::bad;
+  }
+
+  // 3. unpack packet and initialize header metadata
   decode_header(packet);
 
-  // 3. check expected function is valid or not
+  // 4. check expected function is valid or not
   if (!check_function(function())) {
     // bad packet or defined class
     return stage::bad;
@@ -37,12 +66,12 @@ stage response::check_stage(const packet_t& packet) {
 
   auto expected_function = utilities::to_underlying(function());
 
-  // 4. check expected function code equals with function code from packet
+  // 5. check expected function code equals with function code from packet
   if ((expected_function != function_code_) &&
       !check_function(function_code_)) {
     std::uint8_t diff = function_code_ - 0x80;
 
-    // 5. if expected function equals packet's function_code - 0x80
+    // 6. if expected function equals packet's function_code - 0x80
     //    exception is occured
     if (expected_function == diff) {
       return stage::error;
@@ -52,7 +81,7 @@ stage response::check_stage(const packet_t& packet) {
     return stage::bad;
   }
 
-  // 6. all tests passed, return the "right" response
+  // 7. all tests passed, return the "right" response
   return stage::passed;
 }
 
@@ -99,6 +128,10 @@ packet_t error::encode() {
 }
 
 void error::decode(const packet_t& packet) {
+  if (packet.size() != calc_adu_length(1)) {
+    throw ex::bad_data();
+  }
+
   decode_header(packet);
 
   std::uint8_t ec;

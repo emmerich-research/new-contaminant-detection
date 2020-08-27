@@ -89,7 +89,8 @@ std::ostream& write_single_coil::dump(std::ostream& os) const {
 namespace response {
 write_single_coil::write_single_coil(const request::write_single_coil* request,
                                      table* data_table) noexcept
-    : internal::response{request->function(), data_table}, request_{request} {
+    : internal::response{request->function(), request->header(), data_table},
+      request_{request} {
   initialize({request_->transaction(), request_->unit()});
 }
 
