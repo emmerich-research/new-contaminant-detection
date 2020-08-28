@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <exception>
+#include <initializer_list>
 #include <memory>
 #include <mutex>
 #include <set>
@@ -77,6 +78,8 @@
 
 #include "modbus-data-table.hpp"
 #include "modbus-data-table.inline.hpp"
+
+#include "modbus-operation.hpp"
 
 #include "modbus-adu.hpp"
 #include "modbus-request.hpp"

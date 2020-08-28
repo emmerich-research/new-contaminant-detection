@@ -5,6 +5,8 @@ if(${CMAKE_BUILD_TYPE} MATCHES Debug)
 endif()
 
 ucm_add_files(
+  "modbus-operation.cpp"
+
   "modbus-logger.cpp"
 
   "modbus-data-table.cpp"

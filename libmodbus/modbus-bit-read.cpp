@@ -9,48 +9,10 @@
 
 #include "modbus-exception.hpp"
 #include "modbus-logger.hpp"
+#include "modbus-operation.hpp"
 #include "modbus-utilities.hpp"
 
 namespace modbus {
-namespace internal {
-packet_t pack_bits(const block::bits::container_type::const_iterator& begin,
-                   const block::bits::container_type::const_iterator& end) {
-  packet_t packet;
-
-  char shift = 0;
-  char one_byte = 0;
-
-  for (auto ptr = begin; ptr < end; ++ptr) {
-    one_byte |= static_cast<char>(*ptr) << shift;
-    if (shift == 7) {
-      packet.push_back(one_byte);
-      one_byte = shift = 0;
-    } else {
-      shift++;
-    }
-  }
-
-  if (shift != 0) {
-    packet.push_back(one_byte);
-  }
-
-  return packet;
-}
-
-block::bits::container_type unpack_bits(const packet_t::const_iterator& begin,
-                                        const packet_t::const_iterator& end) {
-  block::bits::container_type result;
-
-  for (auto ptr = begin; ptr < end; ++ptr) {
-    for (int bit = 0x01; bit & 0xff; bit <<= 1) {
-      result.push_back(static_cast<block::bits::data_type>(*ptr & bit));
-    }
-  }
-
-  return result;
-}
-}  // namespace internal
-
 namespace request {
 template <>
 std::ostream& base_read_bits<constants::function_code::read_coils>::dump(
@@ -125,7 +87,7 @@ template <>
 packet_t base_read_bits<constants::function_code::read_coils>::encode() {
   try {
     const auto& [start, end] =
-        data_table_->coils().get(request_->address(), request_->count());
+        data_table()->coils().get(request_->address(), request_->count());
 
     bits_ = block::bits::container_type{start, end};
     calc_length(request_->byte_count() + 1);
@@ -133,7 +95,7 @@ packet_t base_read_bits<constants::function_code::read_coils>::encode() {
     packet.reserve(request_->response_size());
     packet_t pdu =
         struc::pack(fmt::format(">{}", format), request_->byte_count());
-    packet_t bits = internal::pack_bits(start, end);
+    packet_t bits = op::pack_bits(start, end);
     packet.insert(packet.end(), pdu.begin(), pdu.end());
     packet.insert(packet.end(), bits.begin(), bits.end());
 
@@ -167,7 +129,7 @@ template <>
 packet_t
 base_read_bits<constants::function_code::read_discrete_inputs>::encode() {
   try {
-    const auto& [start, end] = data_table_->discrete_inputs().get(
+    const auto& [start, end] = data_table()->discrete_inputs().get(
         request_->address(), request_->count());
 
     bits_ = block::bits::container_type{start, end};
@@ -176,7 +138,7 @@ base_read_bits<constants::function_code::read_discrete_inputs>::encode() {
     packet.reserve(request_->response_size());
     packet_t pdu =
         struc::pack(fmt::format(">{}", format), request_->byte_count());
-    packet_t bits = internal::pack_bits(start, end);
+    packet_t bits = op::pack_bits(start, end);
     packet.insert(packet.end(), pdu.begin(), pdu.end());
     packet.insert(packet.end(), bits.begin(), bits.end());
 

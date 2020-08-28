@@ -67,6 +67,10 @@ packet_t request_handler::handle(table* data_table, const packet_t& packet) {
       } break;
 
       case constants::function_code::write_multiple_coils: {
+        request::write_multiple_coils req;
+        req.decode(packet);
+        auto&& res = req.execute(data_table);
+        return res->encode();
       } break;
 
       case constants::function_code::write_multiple_registers: {

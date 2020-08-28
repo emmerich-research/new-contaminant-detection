@@ -19,14 +19,6 @@
 #include "modbus-response.hpp"
 
 namespace modbus {
-// forward declarations
-namespace internal {
-packet_t pack_bits(const block::bits::container_type::const_iterator& begin,
-                   const block::bits::container_type::const_iterator& end);
-block::bits::container_type unpack_bits(const packet_t::const_iterator& begin,
-                                        const packet_t::const_iterator& end);
-}  // namespace internal
-
 namespace request {
 /**
  * base request read bits class
@@ -51,8 +43,9 @@ class base_read_bits : public internal::request {
    * @param address address requested
    * @param count   count   requested
    */
-  explicit base_read_bits(const address_t&  address = address_t{},
-                          const num_bits_t& count = num_bits_t{}) noexcept;
+  explicit base_read_bits(
+      const address_t&       address = address_t{},
+      const read_num_bits_t& count = read_num_bits_t{}) noexcept;
 
   /**
    * Encode read bits packet from given data
@@ -104,7 +97,7 @@ class base_read_bits : public internal::request {
    *
    * @return count
    */
-  inline const num_bits_t& count() const { return count_; }
+  inline const read_num_bits_t& count() const { return count_; }
 
   /**
    * Dump to string
@@ -127,7 +120,7 @@ class base_read_bits : public internal::request {
   /**
    * Number of bits
    */
-  num_bits_t count_;
+  read_num_bits_t count_;
   /**
    * Struct format
    */

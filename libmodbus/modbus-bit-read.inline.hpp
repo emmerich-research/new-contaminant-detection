@@ -3,20 +3,21 @@
 
 #include "modbus-bit-read.hpp"
 
-#include <algorithm>
 #include <exception>
 
 #include <struc.hpp>
 
 #include "modbus-exception.hpp"
 #include "modbus-logger.hpp"
+#include "modbus-operation.hpp"
 #include "modbus-utilities.hpp"
 
 namespace modbus {
 namespace request {
 template <constants::function_code function_code>
-base_read_bits<function_code>::base_read_bits(const address_t&  address,
-                                              const num_bits_t& count) noexcept
+base_read_bits<function_code>::base_read_bits(
+    const address_t&       address,
+    const read_num_bits_t& count) noexcept
     : internal::request{function_code}, address_{address}, count_{count} {}
 
 template <constants::function_code function_code>
@@ -37,7 +38,7 @@ typename packet_t::size_type base_read_bits<function_code>::response_size()
 
 template <constants::function_code function_code>
 packet_t base_read_bits<function_code>::encode() {
-  if (!count_.validate()) {
+  if (!address_.validate() || !count_.validate()) {
     throw ex::bad_data();
   }
 
@@ -84,7 +85,7 @@ void base_read_bits<function_code>::decode_passed(const packet_t& packet) {
 
     packet_t::size_type         byte_idx = header_length + 1;
     block::bits::container_type buffer =
-        internal::unpack_bits(packet.begin() + byte_idx + 1, packet.end());
+        op::unpack_bits(packet.begin() + byte_idx + 1, packet.end());
 
     if (buffer.size() != request_->count().get()) {
       throw ex::bad_data();

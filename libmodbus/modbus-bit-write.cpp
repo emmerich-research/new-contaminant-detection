@@ -4,11 +4,13 @@
 
 #include <algorithm>
 #include <exception>
+#include <iterator>
 
 #include <struc.hpp>
 
 #include "modbus-exception.hpp"
 #include "modbus-logger.hpp"
+#include "modbus-operation.hpp"
 #include "modbus-utilities.hpp"
 
 namespace modbus {
@@ -69,8 +71,6 @@ typename internal::response::pointer write_single_coil::execute(
     throw ex::illegal_data_address(function(), header());
   }
 
-  data_table->coils().set(address_, value_ == value::bits::on);
-
   return response::write_single_coil::create(this, data_table);
 }
 
@@ -84,7 +84,100 @@ std::ostream& write_single_coil::dump(std::ostream& os) const {
       utilities::to_underlying(value_));
   return os;
 }
+
+write_multiple_coils::write_multiple_coils(
+    const address_t&                              address,
+    const write_num_bits_t&                       count,
+    std::initializer_list<block::bits::data_type> values) noexcept
+    : internal::request{constants::function_code::write_multiple_coils},
+      address_{address},
+      count_{count},
+      values_(values) {
+  byte_count_ = byte_count();
 }
+
+packet_t write_multiple_coils::encode() {
+  if (!address_.validate() || !count_.validate()) {
+    throw ex::bad_data();
+  }
+
+  std::uint16_t data_length = 4 + 1 + byte_count_;
+  calc_length(data_length);
+  packet_t packet = header_packet();
+  packet.reserve(header_length + data_length);
+  packet_t pdu = struc::pack(fmt::format(">{}", format), address_(), count_(),
+                             byte_count());
+  packet.insert(packet.end(), pdu.begin(), pdu.end());
+
+  packet_t values_packet = op::pack_bits(values_.begin(), values_.end());
+
+  packet.insert(packet.end(), values_packet.begin(), values_packet.end());
+
+  if (packet.size() != (data_length + header_length + 1)) {
+    throw ex::bad_data();
+  }
+
+  return packet;
+}
+
+void write_multiple_coils::decode(const packet_t& packet) {
+  try {
+    if (packet.at(header_length) != utilities::to_underlying(function())) {
+      throw ex::bad_data();
+    }
+
+    decode_header(packet);
+
+    packet_t::size_type values_idx = header_length + 1 + 5;
+    std::uint8_t byte_count_recv;
+    struc::unpack(fmt::format(">{}", format), packet.data() + header_length + 1,
+                  address_.ref(), count_.ref(), byte_count_recv);
+    byte_count_ = byte_count_recv;
+    values_ = op::unpack_bits(packet.begin() + values_idx, packet.end());
+    values_.resize(count_());
+  } catch (...) {
+    throw ex::server_device_failure(function(), header());
+  }
+}
+
+typename internal::response::pointer write_multiple_coils::execute(
+    table* data_table) {
+  if (!count_.validate()) {
+    throw ex::illegal_data_value(function(), header());
+  }
+
+  if (!data_table->coils().validate(address_, count_)) {
+    throw ex::illegal_data_address(function(), header());
+  }
+
+  return response::write_multiple_coils::create(this, data_table);
+}
+
+typename packet_t::size_type write_multiple_coils::response_size() const {
+  return calc_adu_length(4);
+}
+
+std::uint8_t write_multiple_coils::byte_count() const {
+  std::uint8_t byte_count = static_cast<std::uint8_t>(count_()) / 8;
+  std::uint8_t remainder = static_cast<std::uint8_t>(count_()) % 8;
+
+  if (remainder)
+    byte_count++;
+
+  return byte_count;
+}
+
+std::ostream& write_multiple_coils::dump(std::ostream& os) const {
+  fmt::print(
+      os,
+      "RequestWriteMultipleCoils(header[transaction={:#04x}, protocol={:#04x}, "
+      "unit={:#04x}], pdu[function={:#04x}, address={:#04x}, quantity={:#04x}, "
+      "bytes_count={:#04x}, values_size={}])",
+      transaction_, protocol, unit_, function_code_, address(), count(),
+      byte_count(), values_.size());
+  return os;
+}
+}  // namespace request
 
 namespace response {
 write_single_coil::write_single_coil(const request::write_single_coil* request,
@@ -112,6 +205,8 @@ packet_t write_single_coil::encode() {
       throw ex::server_device_failure(function(), header());
     }
 
+    data_table()->coils().set(request_->address(),
+                              request_->value() == value::bits::on);
     return packet;
   } catch (const std::out_of_range&) {
     throw ex::illegal_data_address(function(), header());
@@ -155,8 +250,68 @@ std::ostream& write_single_coil::dump(std::ostream& os) const {
       "ResponseWriteSingleCoil(header[transaction={:#04x}, protocol={:#04x}, "
       "unit={:#04x}], pdu[function={:#04x}, address={:#04x}, "
       "value={:#04x}])",
-      transaction_, protocol, unit_, function_code_, request_->address()(),
+      transaction_, protocol, unit_, function_code_, request_->address(),
       utilities::to_underlying(request_->value()));
+  return os;
+}
+
+write_multiple_coils::write_multiple_coils(
+    const request::write_multiple_coils* request,
+    table*                               data_table) noexcept
+    : internal::response{request->function(), request->header(), data_table},
+      request_{request} {
+  initialize({request_->transaction(), request_->unit()});
+}
+
+packet_t write_multiple_coils::encode() {
+  try {
+    calc_length(data_length);
+    packet_t packet = header_packet();
+    packet.reserve(request_->response_size());
+    packet_t pdu = struc::pack(fmt::format(">{}", format),
+                               request_->address()(), request_->count()());
+    packet.insert(packet.end(), pdu.begin(), pdu.end());
+    data_table()->coils().set(request_->address(), request_->values());
+    return packet;
+  } catch (const std::out_of_range&) {
+    throw ex::illegal_data_address(function(), header());
+  } catch (...) {
+    throw ex::server_device_failure(function(), header());
+  }
+}
+
+void write_multiple_coils::decode_passed(const packet_t& packet) {
+  try {
+    if (packet.size() != request_->response_size()) {
+      throw ex::bad_data();
+    }
+
+    packet_t::size_type address_idx = header_length + 1;
+
+    struc::unpack(fmt::format(">{}", format), packet.data() + address_idx,
+                  address_.ref(), count_.ref());
+
+    if (request_->address() != address_) {
+      logger::get()->debug("ResponseWriteMultipleCoils: Address mismatch");
+      throw ex::bad_data();
+    }
+
+    if (request_->count() != count_) {
+      logger::get()->debug("ResponseWriteMultipleCoils: Count mismatch");
+      throw ex::bad_data();
+    }
+  } catch (...) {
+    throw ex::bad_data();
+  }
+}
+
+std::ostream& write_multiple_coils::dump(std::ostream& os) const {
+  fmt::print(os,
+             "ResponseWriteMultipleCoils(header[transaction={:#04x}, "
+             "protocol={:#04x}, "
+             "unit={:#04x}], pdu[function={:#04x}, address={:#04x}])",
+             transaction_, protocol, unit_, function_code_,
+             request_->address());
   return os;
 }
 }  // namespace response

@@ -71,8 +71,8 @@ static constexpr std::uint16_t   max_adu_length = 260;
 static constexpr std::uint16_t   tcp_protocol = 0x00;
 static constexpr std::uint16_t   max_num_bits_read = 0x07D0;
 static constexpr std::uint16_t   max_num_regs_read = 0x007D;
-static constexpr std::uint16_t   max_num_bits_write = 0x07D0;
-static constexpr std::uint16_t   max_num_regs_write = 0x007D;
+static constexpr std::uint16_t   max_num_bits_write = 0x07B0;
+static constexpr std::uint16_t   max_num_regs_write = 0x007B;
 static constexpr std::uint16_t   max_address = 0xFFFF;
 }  // namespace constants
 
@@ -84,7 +84,6 @@ static constexpr bool check_function(std::uint8_t function) {
   return static_cast<std::uint8_t>(constants::function_code::min) < function &&
          function < static_cast<std::uint8_t>(constants::function_code::max);
 }
-
 static constexpr bool check_function(constants::function_code function) {
   return (function != constants::function_code::min) &&
          (function != constants::function_code::max);

@@ -15,10 +15,11 @@ namespace modbus {
 namespace block {
 template <template <class...> class container_t,
           typename data_t,
-          typename count_t>
+          typename read_count_t,
+          typename write_count_t>
 class base;
 
-template <typename data_t, typename count_t>
+template <typename data_t, typename read_count_t, typename write_count_t>
 class sequential;
 }  // namespace block
 class table;
@@ -36,11 +37,16 @@ namespace block {
  */
 template <template <class...> class base_container_t,
           typename data_t,
-          typename count_t>
+          typename read_count_t,
+          typename write_count_t>
 class base {
   static_assert(
-      std::is_base_of_v<internal::base_metadata_t<std::uint16_t>, count_t>,
-      "count_t must extends internal::base_metadata_t");
+      std::is_base_of_v<internal::base_metadata_t<std::uint16_t>, read_count_t>,
+      "read_count_t must extends internal::base_metadata_t");
+
+  static_assert(std::is_base_of_v<internal::base_metadata_t<std::uint16_t>,
+                                  write_count_t>,
+                "write_count_t must extends internal::base_metadata_t");
 
  public:
   /**
@@ -107,8 +113,8 @@ class base {
    *
    * @return pair of iterator (begin and end) slice of data from container
    */
-  virtual slice_type get(const address_t& address,
-                         const count_t&   count) const = 0;
+  virtual slice_type get(const address_t&    address,
+                         const read_count_t& count) const = 0;
 
   /**
    * Get single value from container
@@ -141,14 +147,30 @@ class base {
   virtual constexpr void reset() = 0;
 
   /**
-   * Validate with count_t
+   * Validate address with only 1 amount of data
    *
    * @param address look-up address
    * @param count   number of slice
    */
-  inline virtual constexpr bool validate(const address_t& address,
-                                         const count_t&   count = count_t{
-                                             1}) const;
+  inline virtual constexpr bool validate(const address_t& address) const;
+
+  /**
+   * Validate with read_count_t
+   *
+   * @param address look-up address
+   * @param count   number of slice
+   */
+  inline virtual constexpr bool validate(const address_t&    address,
+                                         const read_count_t& count) const;
+
+  /**
+   * Validate with write_count_t
+   *
+   * @param address look-up address
+   * @param count   number of slice
+   */
+  inline virtual constexpr bool validate(const address_t&     address,
+                                         const write_count_t& count) const;
 
   /**
    * Validate size type
@@ -247,50 +269,57 @@ class base {
  *
  * @tparam data_t      data type
  */
-template <typename data_t, typename count_t>
-class sequential : public base<std::vector, data_t, count_t> {
+template <typename data_t, typename read_count_t, typename write_count_t>
+class sequential
+    : public base<std::vector, data_t, read_count_t, write_count_t> {
  public:
   /**
    * Data type
    */
-  using typename base<std::vector, data_t, count_t>::data_type;
+  using typename base<std::vector, data_t, read_count_t, write_count_t>::
+      data_type;
 
   /**
    * Container type
    */
-  using typename base<std::vector, data_t, count_t>::container_type;
+  using typename base<std::vector, data_t, read_count_t, write_count_t>::
+      container_type;
 
   /**
    * Iterator type
    */
-  using typename base<std::vector, data_t, count_t>::iterator_type;
+  using typename base<std::vector, data_t, read_count_t, write_count_t>::
+      iterator_type;
 
   /**
    * Slice type
    *
    * Containing begin and end that denotes slice of container
    */
-  using typename base<std::vector, data_t, count_t>::slice_type;
+  using typename base<std::vector, data_t, read_count_t, write_count_t>::
+      slice_type;
 
   /**
    * Size type
    */
-  using typename base<std::vector, data_t, count_t>::size_type;
+  using typename base<std::vector, data_t, read_count_t, write_count_t>::
+      size_type;
 
   /**
    * Const reference
    */
-  using typename base<std::vector, data_t, count_t>::const_reference;
+  using typename base<std::vector, data_t, read_count_t, write_count_t>::
+      const_reference;
 
   /**
    * Container max capacity
    */
-  using base<std::vector, data_t, count_t>::max_capacity;
+  using base<std::vector, data_t, read_count_t, write_count_t>::max_capacity;
 
   /**
    * Mutex
    */
-  using base<std::vector, data_t, count_t>::mutex_;
+  using base<std::vector, data_t, read_count_t, write_count_t>::mutex_;
 
   /**
    * Initializer
@@ -348,8 +377,8 @@ class sequential : public base<std::vector, data_t, count_t> {
    * @return pair of iterator (begin and end) slice of data from container
    */
 
-  inline virtual slice_type get(const address_t& address,
-                                const count_t&   count) const override;
+  inline virtual slice_type get(const address_t&    address,
+                                const read_count_t& count) const override;
 
   /**
    * Get single value from container
@@ -385,32 +414,33 @@ class sequential : public base<std::vector, data_t, count_t> {
   /**
    * Starting address getter
    */
-  using base<std::vector, data_t, count_t>::starting_address;
+  using base<std::vector, data_t, read_count_t, write_count_t>::
+      starting_address;
 
   /**
    * Container getter
    */
-  using base<std::vector, data_t, count_t>::container;
+  using base<std::vector, data_t, read_count_t, write_count_t>::container;
 
   /**
    * Capacity getter
    */
-  using base<std::vector, data_t, count_t>::capacity;
+  using base<std::vector, data_t, read_count_t, write_count_t>::capacity;
 
   /**
    * Default value getter
    */
-  using base<std::vector, data_t, count_t>::default_value;
+  using base<std::vector, data_t, read_count_t, write_count_t>::default_value;
 
   /**
-   * Validation with count_t
+   * Validation with read_count_t
    */
-  using base<std::vector, data_t, count_t>::validate;
+  using base<std::vector, data_t, read_count_t, write_count_t>::validate;
 
   /**
    * Validation with size_type
    */
-  using base<std::vector, data_t, count_t>::validate_sz;
+  using base<std::vector, data_t, read_count_t, write_count_t>::validate_sz;
 
   /**
    * Get capacity
@@ -418,7 +448,7 @@ class sequential : public base<std::vector, data_t, count_t> {
    * @return capacity
    */
   inline virtual constexpr
-      typename base<std::vector, data_t, count_t>::size_type
+      typename base<std::vector, data_t, read_count_t, write_count_t>::size_type
       capacity() const override {
     return capacity_;
   }
@@ -433,7 +463,8 @@ class sequential : public base<std::vector, data_t, count_t> {
    */
   template <typename ostream>
   inline friend ostream& operator<<(ostream& os, const sequential& obj) {
-    return os << static_cast<const base<std::vector, data_t, count_t>&>(obj)
+    return os << static_cast<const base<std::vector, data_t, read_count_t,
+                                        write_count_t>&>(obj)
               << ", type=sequential"
               << ")";
   }
@@ -442,22 +473,22 @@ class sequential : public base<std::vector, data_t, count_t> {
   /**
    * Container
    */
-  using base<std::vector, data_t, count_t>::container_;
+  using base<std::vector, data_t, read_count_t, write_count_t>::container_;
   /**
    * Capacity
    */
-  using base<std::vector, data_t, count_t>::capacity_;
+  using base<std::vector, data_t, read_count_t, write_count_t>::capacity_;
 };
 
 /**
  * Bit blocks
  */
-using bits = sequential<bool, num_bits_t>;
+using bits = sequential<bool, read_num_bits_t, write_num_bits_t>;
 
 /**
  * Register blocks
  */
-using registers = sequential<std::uint16_t, num_regs_t>;
+using registers = sequential<std::uint16_t, read_num_regs_t, write_num_regs_t>;
 }
 
 class table {

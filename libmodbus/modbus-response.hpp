@@ -112,6 +112,22 @@ class response : public adu {
    */
   static bool initial_check(const packet_t& packet);
 
+  /**
+   * Data table getter
+   *
+   * @return data table pointer
+   */
+  inline table* data_table() { return data_table_; }
+
+  /**
+   * Data table getter
+   *
+   * @return data table pointer
+   */
+  inline const table* data_table() const {
+    return const_cast<table*>(data_table_);
+  }
+
  protected:
   /**
    * Request header
