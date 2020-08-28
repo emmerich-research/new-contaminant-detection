@@ -101,10 +101,9 @@ packet_t write_multiple_coils::encode() {
     throw ex::bad_data();
   }
 
-  std::uint16_t data_length = 4 + 1 + byte_count_;
-  calc_length(data_length);
+  calc_length(data_length());
   packet_t packet = header_packet();
-  packet.reserve(header_length + data_length);
+  packet.reserve(header_length + data_length());
   packet_t pdu = struc::pack(fmt::format(">{}", format), address_(), count_(),
                              byte_count());
   packet.insert(packet.end(), pdu.begin(), pdu.end());
@@ -113,7 +112,7 @@ packet_t write_multiple_coils::encode() {
 
   packet.insert(packet.end(), values_packet.begin(), values_packet.end());
 
-  if (packet.size() != (data_length + header_length + 1)) {
+  if (packet.size() != (data_length() + header_length + 1)) {
     throw ex::bad_data();
   }
 

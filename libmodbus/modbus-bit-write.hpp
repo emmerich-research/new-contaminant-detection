@@ -234,6 +234,16 @@ class write_multiple_coils : public internal::request {
 
  private:
   /**
+   * Get data length
+   *
+   * Except Function size + header
+   *
+   * @return data length
+   */
+  inline std::uint16_t data_length() const { return 4 + 1 + byte_count_; }
+
+ private:
+  /**
    * Address
    */
   address_t address_;
