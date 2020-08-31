@@ -57,11 +57,11 @@ class base_read_bits : public internal::request {
   /**
    * Decode read bits packet
    *
-   * @param data data to be appended
+   * @param packet packet to decode
    *
    * @return packet format
    */
-  virtual void decode(const packet_t& data) override;
+  virtual void decode(const packet_t& packet) override;
 
   /**
    * Encode read bits packet

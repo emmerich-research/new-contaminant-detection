@@ -191,6 +191,12 @@ class error : private boost::noncopyable, public internal::response {
    */
   virtual void decode(const packet_t& packet) override;
 
+ public:
+  /**
+   * Length of packet
+   */
+  static constexpr typename packet_t::size_type packet_size = header_length + 2;
+
  private:
   /**
    * Struct format

@@ -29,7 +29,7 @@ template <constants::function_code function_code>
 typename packet_t::size_type base_read_registers<function_code>::response_size()
     const {
   // byte count (1 byte) + count * 2 bytes
-  return calc_adu_length(1 + (count_() * 2));
+  return calc_adu_length(1 + byte_count());
 }
 
 template <constants::function_code function_code>

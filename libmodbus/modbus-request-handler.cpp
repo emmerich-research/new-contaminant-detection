@@ -94,12 +94,24 @@ packet_t request_handler::handle(table* data_table, const packet_t& packet) {
         return res->encode();
       } break;
 
-      case constants::function_code::read_write_multiple_registers: {
+      case constants::function_code::mask_write_register: {
+        request::mask_write_register req;
+        req.decode(packet);
+        auto&& res = req.execute(data_table);
+        return res->encode();
       } break;
 
-      default:
-        break;
-        // throw ex::illegal_function{};
+      case constants::function_code::read_write_multiple_registers: {
+        request::read_write_multiple_registers req;
+        req.decode(packet);
+        auto&& res = req.execute(data_table);
+        return res->encode();
+      } break;
+
+      default: {
+        request::illegal req;
+        req.decode(packet);
+      } break;
     }
   } catch (const ex::specification_error& exc) {
     logger::error("Modbus exception occured: {}", exc.what());

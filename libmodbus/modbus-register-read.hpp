@@ -146,14 +146,15 @@ namespace response {
  * [ (Header...)                 ]
  * [ Function (1 byte)           ]
  * [ Byte count = 2 x N (1 byte) ]
- * [ Bits (N * 2 bytes)          ]
+ * [ Registers (N * 2 bytes)     ]
  *
  * N = quantity of registers
  */
 template <constants::function_code function_code>
 class base_read_registers : public internal::response {
  public:
-  /** Create std::unique_ptr of response::read_registers
+  /**
+   * Create std::unique_ptr of response::read_registers
    * @return std::unique_ptr of response::read_registers
    */
   MAKE_STD_UNIQUE(base_read_registers)
@@ -161,7 +162,7 @@ class base_read_registers : public internal::response {
   /**
    * response::read_registers constructor
    *
-   * @param request    read coils request pointer
+   * @param request    read registers request pointer
    * @param data_table data table
    */
   explicit base_read_registers(
