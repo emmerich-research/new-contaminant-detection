@@ -66,8 +66,10 @@ int main(int argc, char* argv[]) {
     /*modbus::read_num_bits_t{0x7D0});*/
 
     /*modbus::request::write_single_coil req;*/
-    modbus::request::write_multiple_coils req(
-        modbus::address_t{0x00}, modbus::write_num_bits_t{2}, {true, true});
+    /*modbus::request::write_multiple_coils req(*/
+    /*modbus::address_t{0x00}, modbus::write_num_bits_t{2}, {true, true});*/
+    modbus::request::read_holding_registers req(modbus::address_t{0x00},
+                                                modbus::read_num_regs_t{5});
     req.initialize({0x1234, 0x01});
 
     auto request = req.encode();
@@ -95,7 +97,8 @@ int main(int argc, char* argv[]) {
           try {
             // modbus::response::read_coils response(&req);
             // modbus::response::write_single_coil response(&req);
-            modbus::response::write_multiple_coils response(&req);
+            // modbus::response::write_multiple_coils response(&req);
+            modbus::response::read_holding_registers response(&req);
             response.decode(packet);
           } catch (const modbus::ex::specification_error& exc) {
             LOG_ERROR("Modbus exception occured {}", exc.what());

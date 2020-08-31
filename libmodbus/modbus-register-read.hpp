@@ -1,5 +1,5 @@
-#ifndef LIB_MODBUS_MODBUS_BIT_READ_HPP_
-#define LIB_MODBUS_MODBUS_BIT_READ_HPP_
+#ifndef LIB_MODBUS_MODBUS_REGISTER_READ_HPP_
+#define LIB_MODBUS_MODBUS_REGISTER_READ_HPP_
 
 #include <cstdint>
 #include <iostream>
@@ -21,41 +21,41 @@
 namespace modbus {
 namespace request {
 /**
- * base request read bits class
+ * base request read registers class
  *
  * @author Ray Andrew
  * @date   August 2020
  *
- * Encode, decode, and execute read coils request
+ * Encode, decode, and execute read registers request
  *
  * Structure :
- * [ (Header...)                ]
- * [ Function (1 byte)          ]
- * [ Starting Address (2 bytes) ]
- * [ Quantity of bits (2 bytes) ]
+ * [ (Header...)                     ]
+ * [ Function (1 byte)               ]
+ * [ Starting Address (2 bytes)      ]
+ * [ Quantity of registers (2 bytes) ]
  */
 template <constants::function_code function_code>
-class base_read_bits : public internal::request {
+class base_read_registers : public internal::request {
  public:
   /**
-   * request::base_read_bits constructor
+   * request::base_read_registers constructor
    *
    * @param address address requested
    * @param count   count   requested
    */
-  explicit base_read_bits(
+  explicit base_read_registers(
       const address_t&       address = address_t{},
-      const read_num_bits_t& count = read_num_bits_t{}) noexcept;
+      const read_num_regs_t& count = read_num_regs_t{}) noexcept;
 
   /**
-   * Encode read bits packet from given data
+   * Encode read registers packet from given data
    *
    * @return packet format
    */
   virtual packet_t encode() override;
 
   /**
-   * Decode read bits packet
+   * Decode read registers packet
    *
    * @param data data to be appended
    *
@@ -64,7 +64,7 @@ class base_read_bits : public internal::request {
   virtual void decode(const packet_t& data) override;
 
   /**
-   * Encode read bits packet
+   * Encode read registers packet
    *
    * @return packet format
    */
@@ -97,7 +97,7 @@ class base_read_bits : public internal::request {
    *
    * @return count
    */
-  inline const read_num_bits_t& count() const { return count_; }
+  inline const read_num_regs_t& count() const { return count_; }
 
   /**
    * Dump to string
@@ -118,53 +118,55 @@ class base_read_bits : public internal::request {
    */
   address_t address_;
   /**
-   * Number of bits
+   * Number of registers
    */
-  read_num_bits_t count_;
+  read_num_regs_t count_;
   /**
    * Struct format
    */
   static constexpr std::string_view format = "HH";
 };
 
-using read_coils = base_read_bits<constants::function_code::read_coils>;
-using read_discrete_inputs =
-    base_read_bits<constants::function_code::read_discrete_inputs>;
+using read_holding_registers =
+    base_read_registers<constants::function_code::read_holding_registers>;
+using read_input_registers =
+    base_read_registers<constants::function_code::read_input_registers>;
 }  // namespace request
 
 namespace response {
 /**
- * base response read bits class
+ * base response read registers class
  *
  * @author Ray Andrew
  * @date   August 2020
  *
- * Encode and decode read bits response
+ * Encode and decode read registers response
  *
  * Structure :
  * [ (Header...)                 ]
  * [ Function (1 byte)           ]
- * [ Byte count = N (1 byte)     ]
- * [ Bits (n = N or N + 1 bytes) ]
+ * [ Byte count = 2 x N (1 byte) ]
+ * [ Bits (N * 2 bytes)          ]
+ *
+ * N = quantity of registers
  */
 template <constants::function_code function_code>
-class base_read_bits : public internal::response {
+class base_read_registers : public internal::response {
  public:
-  /**
-   * Create std::unique_ptr of response::read_bits
-   *
-   * @return std::unique_ptr of response::read_bits
+  /** Create std::unique_ptr of response::read_registers
+   * @return std::unique_ptr of response::read_registers
    */
-  MAKE_STD_UNIQUE(base_read_bits)
+  MAKE_STD_UNIQUE(base_read_registers)
 
   /**
-   * response::read_bits constructor
+   * response::read_registers constructor
    *
    * @param request    read coils request pointer
    * @param data_table data table
    */
-  explicit base_read_bits(const request::base_read_bits<function_code>* request,
-                          table* data_table = nullptr) noexcept;
+  explicit base_read_registers(
+      const request::base_read_registers<function_code>* request,
+      table* data_table = nullptr) noexcept;
 
   /**
    * Encode packet
@@ -197,33 +199,36 @@ class base_read_bits : public internal::response {
   inline std::uint16_t byte_count() const { return count_; }
 
   /**
-   * Get bits
+   * Get registers
    */
-  inline const block::bits::container_type& bits() const { return bits_; }
+  inline const block::registers::container_type& registers() const {
+    return registers_;
+  }
 
  private:
   /**
    * Request pointer
    */
-  const request::base_read_bits<function_code>* request_;
+  const request::base_read_registers<function_code>* request_;
   /**
    * Byte count
    */
   std::uint16_t count_;
   /**
-   * Slice of data from block of bits from data table
+   * Slice of data from block of registers from data table
    */
-  block::bits::container_type bits_;
+  block::registers::container_type registers_;
   /**
    * Struct format
    */
   static constexpr std::string_view format = "B";
 };
 
-using read_coils = base_read_bits<constants::function_code::read_coils>;
-using read_discrete_inputs =
-    base_read_bits<constants::function_code::read_discrete_inputs>;
+using read_holding_registers =
+    base_read_registers<constants::function_code::read_holding_registers>;
+using read_input_registers =
+    base_read_registers<constants::function_code::read_input_registers>;
 }  // namespace response
-}
+}  // namespace modbus
 
-#endif  // LIB_MODBUS_MODBUS_BIT_READ_HPP_
+#endif  // LIB_MODBUS_MODBUS_REGISTER_READ_HPP_

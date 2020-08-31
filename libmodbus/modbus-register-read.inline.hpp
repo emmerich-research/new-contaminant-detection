@@ -1,5 +1,5 @@
-#ifndef LIB_MODBUS_MODBUS_BIT_READ_INLINE_HPP_
-#define LIB_MODBUS_MODBUS_BIT_READ_INLINE_HPP_
+#ifndef LIB_MODBUS_MODBUS_REGISTER_READ_INLINE_HPP_
+#define LIB_MODBUS_MODBUS_REGISTER_READ_INLINE_HPP_
 
 #include "modbus-bit-read.hpp"
 
@@ -15,29 +15,25 @@
 namespace modbus {
 namespace request {
 template <constants::function_code function_code>
-base_read_bits<function_code>::base_read_bits(
+base_read_registers<function_code>::base_read_registers(
     const address_t&       address,
-    const read_num_bits_t& count) noexcept
+    const read_num_regs_t& count) noexcept
     : internal::request{function_code}, address_{address}, count_{count} {}
 
 template <constants::function_code function_code>
-std::uint16_t base_read_bits<function_code>::byte_count() const {
-  std::uint16_t byte_count = static_cast<std::uint16_t>(count_()) / 8;
-  std::uint16_t remainder = static_cast<std::uint16_t>(count_()) % 8;
-
-  if (remainder)
-    byte_count++;
-  return byte_count;
+std::uint16_t base_read_registers<function_code>::byte_count() const {
+  return count_() * 2;
 }
 
 template <constants::function_code function_code>
-typename packet_t::size_type base_read_bits<function_code>::response_size()
+typename packet_t::size_type base_read_registers<function_code>::response_size()
     const {
-  return calc_adu_length(1 + byte_count());
+  // byte count (1 byte) + count * 2 bytes
+  return calc_adu_length(1 + (count_() * 2));
 }
 
 template <constants::function_code function_code>
-packet_t base_read_bits<function_code>::encode() {
+packet_t base_read_registers<function_code>::encode() {
   if (!address_.validate() || !count_.validate()) {
     throw ex::bad_data();
   }
@@ -51,7 +47,7 @@ packet_t base_read_bits<function_code>::encode() {
 }
 
 template <constants::function_code function_code>
-void base_read_bits<function_code>::decode(const packet_t& packet) {
+void base_read_registers<function_code>::decode(const packet_t& packet) {
   try {
     if (packet.at(header_length) != utilities::to_underlying(function_code)) {
       throw ex::bad_data();
@@ -68,41 +64,58 @@ void base_read_bits<function_code>::decode(const packet_t& packet) {
 
 namespace response {
 template <constants::function_code function_code>
-base_read_bits<function_code>::base_read_bits(
-    const request::base_read_bits<function_code>* request,
-    table*                                        data_table) noexcept
+base_read_registers<function_code>::base_read_registers(
+    const request::base_read_registers<function_code>* request,
+    table*                                             data_table) noexcept
     : internal::response{function_code, request->header(), data_table},
       request_{request} {
   initialize({request_->transaction(), request_->unit()});
 }
 
 template <constants::function_code function_code>
-void base_read_bits<function_code>::decode_passed(const packet_t& packet) {
+void base_read_registers<function_code>::decode_passed(const packet_t& packet) {
   try {
     if (packet.size() != request_->response_size()) {
+#ifndef DEBUG_ON
+      logger::get()->debug(
+          "Packet size is not as same as expected response size");
+#endif
       throw ex::bad_data();
     }
 
-    packet_t::size_type         byte_idx = header_length + 1;
+    packet_t::size_type byte_idx = header_length + 1;
     count_ = static_cast<std::uint16_t>(packet[byte_idx]);
 
-    if (count_ != request_->count().get()) {
+    if (count_ != request_->byte_count()) {
+#ifndef DEBUG_ON
+      logger::get()->debug(
+          "Bytes count is not as same as expected number of registers");
+#endif
       throw ex::bad_data();
     }
 
-    block::bits::container_type buffer =
-        op::unpack_bits(packet.begin() + byte_idx + 1, packet.end());
+    block::registers::container_type buffer;
+
+    for (int idx = 0; idx < request_->byte_count(); idx += 2) {
+      std::uint16_t value;
+      struc::unpack(">H", packet.data() + byte_idx + 1 + idx, value);
+      buffer.push_back(value);
+    }
 
     if (buffer.size() != request_->count().get()) {
+#ifndef DEBUG_ON
+      logger::get()->debug("Bytes count is not as same as number of registers");
+#endif
       throw ex::bad_data();
     }
 
-    bits_.swap(buffer);
+    registers_.swap(buffer);
   } catch (...) {
     throw ex::bad_data();
   }
 }
 }  // namespace response
-}  // namespace modbus
+}
 
-#endif  // LIB_MODBUS_MODBUS_BIT_READ_INLINE_HPP_
+#endif // LIB_MODBUS_MODBUS_REGISTER_READ_INLINE_HPP_
+

@@ -47,7 +47,15 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] const char** argv) {
 
   modbus::logger::create<server_logger>(true);
 
-  auto&& data_table = modbus::table::create();
+  auto&& data_table = modbus::table::create(
+      /*modbus::table::initializer_t{*/
+      // modbus::block::bits::initializer_t{modbus::address_t{0x00}, 0xFFFF,
+      // true}, modbus::block::bits::initializer_t{modbus::address_t{0x00},
+      // 0xFFFF, true},
+      // modbus::block::registers::initializer_t{modbus::address_t{0x00},
+      // 0xFFFF, 15},
+      /*modbus::block::registers::initializer_t{}}*/
+  );
   auto&& server = modbus::server::create(std::move(data_table));
 
   server->bind_connect(

@@ -18,6 +18,8 @@ ucm_add_files(
   "modbus-bit-read.cpp"
   "modbus-bit-write.cpp"
 
+  "modbus-register-read.cpp"
+
   "modbus-request-handler.cpp"
   "modbus-server.cpp"
 

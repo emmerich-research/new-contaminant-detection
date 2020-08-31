@@ -12,7 +12,7 @@ struct a {
   int y;
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version) {
+  void serialize(Archive& ar, const unsigned int) {
     ar& x;
     ar& y;
   }

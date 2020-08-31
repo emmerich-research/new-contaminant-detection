@@ -81,7 +81,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
   });
 
   auto* state = State::get();
-  while (true) {
+  while (std::getchar() != '\n') {
     // load data
     modbus.read_input_registers(config.min_data_address(),
                                 config.data_length());

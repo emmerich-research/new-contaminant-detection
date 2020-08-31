@@ -51,9 +51,17 @@ packet_t request_handler::handle(table* data_table, const packet_t& packet) {
       } break;
 
       case constants::function_code::read_holding_registers: {
+        request::read_holding_registers req;
+        req.decode(packet);
+        auto&& res = req.execute(data_table);
+        return res->encode();
       } break;
 
       case constants::function_code::read_input_registers: {
+        request::read_input_registers req;
+        req.decode(packet);
+        auto&& res = req.execute(data_table);
+        return res->encode();
       } break;
 
       case constants::function_code::write_single_coil: {
@@ -87,7 +95,9 @@ packet_t request_handler::handle(table* data_table, const packet_t& packet) {
     logger::get()->error("Modbus exception occured: {}", exc.what());
     response::error response(exc);
     auto            resp = response.encode();
+#ifdef DEBUG_ON
     logger::get()->error("Exception packet: {}", utilities::packet_str(resp));
+#endif
     return resp;
   } catch (const ex::base_error& exc) {
     logger::get()->error("Internal exception occured: {}", exc.what());
