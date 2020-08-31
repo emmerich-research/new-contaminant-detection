@@ -35,28 +35,26 @@ server::~server() {
 }
 
 void server::on_start(asio::error_code ec) {
-  logger::get()->debug("starting tcp server @ {} {}, message: {}",
-                       server_.listen_address(), server_.listen_port(),
-                       ec.message());
+  logger::debug("starting tcp server @ {} {}, message: {}",
+                server_.listen_address(), server_.listen_port(), ec.message());
 }
 
 void server::on_stop(asio::error_code ec) {
-  logger::get()->debug("stopping tcp server, message: {}", ec.message());
+  logger::debug("stopping tcp server, message: {}", ec.message());
 }
 
 void server::on_connect(session_ptr_t& session_ptr) {
   session_ptr->no_delay(true);
   on_connect_cb_(session_ptr, *data_table_);
-  logger::get()->debug("client enters: {} {} {} {}",
-                       session_ptr->remote_address(),
-                       session_ptr->remote_port(), session_ptr->local_address(),
-                       session_ptr->local_port());
+  logger::debug("client enters: {} {} {} {}", session_ptr->remote_address(),
+                session_ptr->remote_port(), session_ptr->local_address(),
+                session_ptr->local_port());
 }
 
 void server::on_disconnect(session_ptr_t& session_ptr) {
   on_disconnect_cb_(session_ptr, *data_table_);
-  logger::get()->debug("client leaves: {} {} {}", session_ptr->remote_address(),
-                       session_ptr->remote_port(), asio2::last_error_msg());
+  logger::debug("client leaves: {} {} {}", session_ptr->remote_address(),
+                session_ptr->remote_port(), asio2::last_error_msg());
 }
 
 void server::on_receive(session_ptr_t&   session_ptr,
@@ -64,13 +62,13 @@ void server::on_receive(session_ptr_t&   session_ptr,
   auto response = request_handler::handle(data_table_.get(), raw_packet);
 
 #ifdef DEBUG_ON
-  logger::get()->debug("[Response, {}]", utilities::packet_str(response));
+  logger::debug("[Response, {}]", utilities::packet_str(response));
 #endif
 
   if (!response.empty()) {
     session_ptr->send(response, []([[maybe_unused]] std::size_t bytes_sent) {
 #ifdef DEBUG_ON
-      logger::get()->debug("bytes sent {}", bytes_sent);
+      logger::debug("bytes sent {}", bytes_sent);
 #endif
     });
   }

@@ -26,19 +26,21 @@ class client_logger : public modbus::logger {
 
   virtual ~client_logger() override {}
 
-  inline virtual void error(
+ protected:
+  inline virtual void error_impl(
       const std::string& message) const noexcept override {
     LOG_ERROR("{}", message);
   }
 
-  inline virtual void debug(
+  inline virtual void debug_impl(
       const std::string& message) const noexcept override {
     if (debug_) {
       LOG_DEBUG("{}", message);
     }
   }
 
-  inline virtual void info(const std::string& message) const noexcept override {
+  inline virtual void info_impl(
+      const std::string& message) const noexcept override {
     LOG_INFO("{}", message);
   }
 };
@@ -68,8 +70,10 @@ int main(int argc, char* argv[]) {
     /*modbus::request::write_single_coil req;*/
     /*modbus::request::write_multiple_coils req(*/
     /*modbus::address_t{0x00}, modbus::write_num_bits_t{2}, {true, true});*/
-    modbus::request::read_holding_registers req(modbus::address_t{0x00},
-                                                modbus::read_num_regs_t{5});
+    /*modbus::request::read_holding_registers req(modbus::address_t{0x00},*/
+    /*modbus::read_num_regs_t{5});*/
+    modbus::request::write_single_register req(modbus::address_t{0x0000},
+                                               modbus::reg_value_t{15});
     req.initialize({0x1234, 0x01});
 
     auto request = req.encode();
@@ -98,7 +102,8 @@ int main(int argc, char* argv[]) {
             // modbus::response::read_coils response(&req);
             // modbus::response::write_single_coil response(&req);
             // modbus::response::write_multiple_coils response(&req);
-            modbus::response::read_holding_registers response(&req);
+            // modbus::response::read_holding_registers response(&req);
+            modbus::response::write_single_register response(&req);
             response.decode(packet);
           } catch (const modbus::ex::specification_error& exc) {
             LOG_ERROR("Modbus exception occured {}", exc.what());

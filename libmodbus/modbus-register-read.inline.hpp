@@ -77,8 +77,7 @@ void base_read_registers<function_code>::decode_passed(const packet_t& packet) {
   try {
     if (packet.size() != request_->response_size()) {
 #ifndef DEBUG_ON
-      logger::get()->debug(
-          "Packet size is not as same as expected response size");
+      logger::debug("Packet size is not as same as expected response size");
 #endif
       throw ex::bad_data();
     }
@@ -88,7 +87,7 @@ void base_read_registers<function_code>::decode_passed(const packet_t& packet) {
 
     if (count_ != request_->byte_count()) {
 #ifndef DEBUG_ON
-      logger::get()->debug(
+      logger::debug(
           "Bytes count is not as same as expected number of registers");
 #endif
       throw ex::bad_data();
@@ -104,7 +103,7 @@ void base_read_registers<function_code>::decode_passed(const packet_t& packet) {
 
     if (buffer.size() != request_->count().get()) {
 #ifndef DEBUG_ON
-      logger::get()->debug("Bytes count is not as same as number of registers");
+      logger::debug("Bytes count is not as same as number of registers");
 #endif
       throw ex::bad_data();
     }

@@ -138,7 +138,7 @@ template <>
 packet_t
 base_read_registers<constants::function_code::read_input_registers>::encode() {
   try {
-    const auto& [start, end] = data_table()->holding_registers().get(
+    const auto& [start, end] = data_table()->input_registers().get(
         request_->address(), request_->count());
 
     registers_ = block::registers::container_type{start, end};

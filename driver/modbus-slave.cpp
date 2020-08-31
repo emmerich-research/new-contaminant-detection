@@ -20,19 +20,21 @@ class server_logger : public modbus::logger {
 
   virtual ~server_logger() override {}
 
-  inline virtual void error(
+ protected:
+  inline virtual void error_impl(
       const std::string& message) const noexcept override {
     LOG_ERROR("{}", message);
   }
 
-  inline virtual void debug(
+  inline virtual void debug_impl(
       const std::string& message) const noexcept override {
     if (debug_) {
       LOG_DEBUG("{}", message);
     }
   }
 
-  inline virtual void info(const std::string& message) const noexcept override {
+  inline virtual void info_impl(
+      const std::string& message) const noexcept override {
     LOG_INFO("{}", message);
   }
 };
@@ -60,10 +62,10 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] const char** argv) {
 
   server->bind_connect(
       []([[maybe_unused]] auto& session_ptr, [[maybe_unused]] auto& table) {
-        /*session_ptr->start_timer(1, std::chrono::seconds(1), [&table]() {*/
-        // LOG_INFO("Coils addr 0x00: {}",
-        // table.coils().get(modbus::address_t{0x00}));
-        /*});*/
+        // session_ptr->start_timer(1, std::chrono::seconds(1), [&table]() {
+        /*LOG_INFO("Input registers addr 0x00: {:#04x}",*/
+        /*table.input_registers().get(modbus::address_t{0x00}));*/
+        //});
       });
 
   server->run();

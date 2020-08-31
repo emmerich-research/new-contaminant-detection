@@ -17,15 +17,15 @@ logger* logger::get() {
   return instance_;
 }
 
-void logger::info(const std::string& message) const noexcept {
+void logger::info_impl(const std::string& message) const noexcept {
   fmt::print(std::cout, "{}\n", message);
 }
 
-void logger::error(const std::string& message) const noexcept {
+void logger::error_impl(const std::string& message) const noexcept {
   info(message);
 }
 
-void logger::debug(const std::string& message) const noexcept {
+void logger::debug_impl(const std::string& message) const noexcept {
   if (debug_) {
     info(message);
   }

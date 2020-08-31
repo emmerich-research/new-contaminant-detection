@@ -37,8 +37,8 @@ stage response::check_stage(const packet_t& packet) {
   struc::unpack(fmt::format(">{}", header_func_format), packet.data(), tr, pr,
                 len, un, fun);
 
-#ifndef DEBUG_ON
-  logger::get()->debug(
+#ifdef DEBUG_ON
+  logger::debug(
       "Checking header: transaction(req[{:#04x}]=packet[{:#04x}]) "
       "protocol(req[{:#04x}]=packet[{:#04x}]) "
       "unit(req[{:#04x}]=packet[{:#04x}]) "

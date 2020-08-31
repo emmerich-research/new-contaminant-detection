@@ -270,6 +270,10 @@ class base_metadata_t {
  * Address type
  */
 using address_t = internal::base_metadata_t<std::uint16_t>;
+/**
+ * Reg value type
+ */
+using reg_value_t = internal::base_metadata_t<std::uint16_t>;
 
 template <bool write>
 class num_bits_t : public internal::base_metadata_t<std::uint16_t> {

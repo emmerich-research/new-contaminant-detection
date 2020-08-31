@@ -79,8 +79,8 @@ class logger : private boost::noncopyable {
    * @param  args         arguments
    */
   template <typename FormatString, typename... Args>
-  inline void info(const FormatString& fmt, Args&&... args) const {
-    info(fmt::format(fmt, std::forward<Args>(args)...));
+  inline static void info(const FormatString& fmt, Args&&... args) {
+    get()->info_impl(fmt, std::forward<Args>(args)...);
   }
 
   /**
@@ -93,12 +93,12 @@ class logger : private boost::noncopyable {
    * @param  args         arguments
    */
   template <typename FormatString, typename... Args>
-  inline void error(const FormatString& fmt, Args&&... args) const {
-    error(fmt::format(fmt, std::forward<Args>(args)...));
+  inline static void error(const FormatString& fmt, Args&&... args) {
+    get()->error_impl(fmt, std::forward<Args>(args)...);
   }
 
   /**
-   * Log debu message to stdout
+   * Log debug message to stdout
    *
    * @tparam FormatString string format type
    * @tparam Args         arguments type
@@ -107,8 +107,8 @@ class logger : private boost::noncopyable {
    * @param  args         arguments
    */
   template <typename FormatString, typename... Args>
-  inline void debug(const FormatString& fmt, Args&&... args) const {
-    debug(fmt::format(fmt, std::forward<Args>(args)...));
+  inline static void debug(const FormatString& fmt, Args&&... args) {
+    get()->debug_impl(fmt, std::forward<Args>(args)...);
   }
 
   /**
@@ -116,21 +116,89 @@ class logger : private boost::noncopyable {
    *
    * @param message message to log
    */
-  virtual void info(const std::string& message) const noexcept;
+  inline static void info(const std::string& message) noexcept {
+    get()->info_impl(message);
+  }
 
   /**
    * Log error message to stdout
    *
    * @param message message to log
    */
-  virtual void error(const std::string& message) const noexcept;
+  inline static void error(const std::string& message) noexcept {
+    get()->error_impl(message);
+  }
 
   /**
    * Log debug message
    *
    * @param message message to log
    */
-  virtual void debug(const std::string& message) const noexcept;
+  inline static void debug(const std::string& message) noexcept {
+    get()->debug_impl(message);
+  }
+
+ protected:
+  /**
+   * Log info message to stdout
+   *
+   * @tparam FormatString string format type
+   * @tparam Args         arguments type
+   *
+   * @param  fmt          string format
+   * @param  args         arguments
+   */
+  template <typename FormatString, typename... Args>
+  inline void info_impl(const FormatString& fmt, Args&&... args) const {
+    info_impl(fmt::format(fmt, std::forward<Args>(args)...));
+  }
+
+  /**
+   * Log error message to stdout @tparam FormatString string format type @tparam
+   * Args         arguments type
+   *
+   * @param  fmt          string format
+   * @param  args         arguments
+   */
+  template <typename FormatString, typename... Args>
+  inline void error_impl(const FormatString& fmt, Args&&... args) const {
+    error_impl(fmt::format(fmt, std::forward<Args>(args)...));
+  }
+
+  /**
+   * Log debug message to stdout
+   *
+   * @tparam FormatString string format type
+   * @tparam Args         arguments type
+   *
+   * @param  fmt          string format
+   * @param  args         arguments
+   */
+  template <typename FormatString, typename... Args>
+  inline void debug_impl(const FormatString& fmt, Args&&... args) const {
+    debug_impl(fmt::format(fmt, std::forward<Args>(args)...));
+  }
+
+  /**
+   * Log info message to stdout
+   *
+   * @param message message to log
+   */
+  virtual void info_impl(const std::string& message) const noexcept;
+
+  /**
+   * Log error message to stdout
+   *
+   * @param message message to log
+   */
+  virtual void error_impl(const std::string& message) const noexcept;
+
+  /**
+   * Log debug message
+   *
+   * @param message message to log
+   */
+  virtual void debug_impl(const std::string& message) const noexcept;
 
  protected:
   /**

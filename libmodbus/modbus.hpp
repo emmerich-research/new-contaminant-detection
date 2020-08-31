@@ -94,6 +94,8 @@
 #include "modbus-register-read.hpp"
 #include "modbus-register-read.inline.hpp"
 
+#include "modbus-register-write.hpp"
+
 #include "modbus-request-handler.hpp"
 
 #include "modbus-server.hpp"

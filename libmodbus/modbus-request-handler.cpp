@@ -16,6 +16,8 @@
 
 #include "modbus-bit-read.hpp"
 #include "modbus-bit-write.hpp"
+#include "modbus-register-read.hpp"
+#include "modbus-register-write.hpp"
 
 namespace modbus {
 packet_t request_handler::handle(table*                  data_table,
@@ -72,6 +74,10 @@ packet_t request_handler::handle(table* data_table, const packet_t& packet) {
       } break;
 
       case constants::function_code::write_single_register: {
+        request::write_single_register req;
+        req.decode(packet);
+        auto&& res = req.execute(data_table);
+        return res->encode();
       } break;
 
       case constants::function_code::write_multiple_coils: {
@@ -82,6 +88,10 @@ packet_t request_handler::handle(table* data_table, const packet_t& packet) {
       } break;
 
       case constants::function_code::write_multiple_registers: {
+        request::write_multiple_registers req;
+        req.decode(packet);
+        auto&& res = req.execute(data_table);
+        return res->encode();
       } break;
 
       case constants::function_code::read_write_multiple_registers: {
@@ -92,19 +102,19 @@ packet_t request_handler::handle(table* data_table, const packet_t& packet) {
         // throw ex::illegal_function{};
     }
   } catch (const ex::specification_error& exc) {
-    logger::get()->error("Modbus exception occured: {}", exc.what());
+    logger::error("Modbus exception occured: {}", exc.what());
     response::error response(exc);
     auto            resp = response.encode();
 #ifdef DEBUG_ON
-    logger::get()->error("Exception packet: {}", utilities::packet_str(resp));
+    logger::error("Exception packet: {}", utilities::packet_str(resp));
 #endif
     return resp;
   } catch (const ex::base_error& exc) {
-    logger::get()->error("Internal exception occured: {}", exc.what());
+    logger::error("Internal exception occured: {}", exc.what());
   } catch (const std::out_of_range& exc) {
-    logger::get()->error("Out of range exception occured: {}", exc.what());
+    logger::error("Out of range exception occured: {}", exc.what());
   } catch (const std::exception& exc) {
-    logger::get()->error("Unintended exception occured {}", exc.what());
+    logger::error("Unintended exception occured {}", exc.what());
   }
 
   return {};
