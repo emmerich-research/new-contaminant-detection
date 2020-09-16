@@ -2,12 +2,12 @@
 
 #include "manager.hpp"
 
-#include <external/imgui/imconfig.h>
-// #include <external/imgui/imstb_rectpack.h>
-// #include <external/imgui/imstb_truetype.h>
+#include <imconfig.h>
+// #include <imstb_rectpack.h>
+// #include <imstb_truetype.h>
 
-#include <external/imgui/examples/imgui_impl_glfw.h>
-#include <external/imgui/examples/imgui_impl_opengl3.h>
+#include <examples/imgui_impl_glfw.h>
+#include <examples/imgui_impl_opengl3.h>
 
 #include <glad/glad.h>
 

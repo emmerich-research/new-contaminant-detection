@@ -9,10 +9,9 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 
-#include <boost/asio/io_context.hpp>
+#include <spdlog/spdlog.h>
 
-#include <libcore/core.hpp>
-#include <libmodbus/modbus.hpp>
+#include <modbuscpp/modbus.hpp>
 
 class server_logger : public modbus::logger {
  public:
@@ -23,30 +22,24 @@ class server_logger : public modbus::logger {
  protected:
   inline virtual void error_impl(
       const std::string& message) const noexcept override {
-    LOG_ERROR("{}", message);
+    spdlog::error("{}", message);
   }
 
   inline virtual void debug_impl(
       const std::string& message) const noexcept override {
     if (debug_) {
-      LOG_DEBUG("{}", message);
+      spdlog::debug("{}", message);
     }
   }
 
   inline virtual void info_impl(
       const std::string& message) const noexcept override {
-    LOG_INFO("{}", message);
+    spdlog::info("{}", message);
   }
 };
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] const char** argv) {
-  USE_NAMESPACE
-
-  if (initialize_core()) {
-    std::cerr << "cannot initialize config, state, and logger!" << std::endl;
-    return ATM_ERR;
-  }
-
+  spdlog::set_level(spdlog::level::debug);
   modbus::logger::create<server_logger>(true);
 
   auto&& data_table = modbus::table::create(

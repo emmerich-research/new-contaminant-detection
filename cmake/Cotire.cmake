@@ -6,11 +6,10 @@ endif()
 include(${CMAKE_CURRENT_LIST_DIR}/CPM.cmake)
 
 CPMAddPackage(
-  NAME filesystem
-  GITHUB_REPOSITORY gulrak/filesystem
-  VERSION 1.3.4
+  NAME cotire
+  GITHUB_REPOSITORY sakra/cotire
+  GIT_TAG 9d8e3f7b584b934edfe2410d87728137a00e4d8b
+  DOWNLOAD_ONLY True
 )
 
-if(filesystem_ADDED)
-  add_library(fs::fs ALIAS ghc_filesystem)
-endif()
+include(${cotire_SOURCE_DIR}/CMake/cotire.cmake)

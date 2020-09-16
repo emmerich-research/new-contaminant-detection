@@ -14,7 +14,7 @@
 #include <type_traits>
 #include <vector>
 
-#include <external/imgui/imgui.h>
+#include <imgui.h>
 
 #include <libcore/core.hpp>
 

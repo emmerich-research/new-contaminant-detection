@@ -1,7 +1,7 @@
 #ifndef LIB_GUI_WINDOW_HPP_
 #define LIB_GUI_WINDOW_HPP_
 
-#include <external/imgui/imgui.h>
+#include <imgui.h>
 
 #include <libcore/core.hpp>
 
