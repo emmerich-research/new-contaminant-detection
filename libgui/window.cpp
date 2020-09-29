@@ -16,7 +16,7 @@ Window::Window(const char*             name,
 Window::~Window() {}
 
 void Window::render() {
-  if (!ImGui::Begin(name(), NULL, flags())) {
+  if (!ImGui::Begin(name(), nullptr, flags())) {
     ImGui::End();
     return;
   }

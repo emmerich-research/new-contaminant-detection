@@ -4,7 +4,7 @@
 
 [general]
 name                         = "Emmerich Contaminants Detection"
-debug                        = true # will log all debugging things
+debug                        = false # will log all debugging things
 
 [image]
 database                     = "contaminants.db"
@@ -14,108 +14,160 @@ directory                    = "images"
 index                        = 0
 
 [modbus]
-# ip-address                   = "192.168.100.11"
-ip-address                   = "192.168.5.48"
-port                         = 502
+port                         = 1502
 
-[modbus.timeout]
-# in seconds
-connect                      = 10
-request                      = 10
-response                     = 10
+#----------------------------------------------------------------
+# Modbus Data Mapping
+#----------------------------------------------------------------
+[modbus.data-mapping]
 
-[modbus.communication]
-[modbus.communication.plc-jetson]
-type                         = "input-coil"
+#----------------------------------------------------------------
+# Coils
+#
+# Status from PLC to Jetson
+#----------------------------------------------------------------
+[modbus.data-mapping.coils]
+starting-address             = 0
 
-[modbus.communication.plc-jetson.imaging-request]
-address                      = 289
+[modbus.data-mapping.coils.data]
+[modbus.data-mapping.coils.data.heartbeat]
+address                      = 0
 type                         = "byte"
 
-[modbus.communication.jetson-plc]
-type                         = "coil"
-
-[modbus.communication.jetson-plc.imaging-done]
+[modbus.data-mapping.coils.data.imaging-request]
 address                      = 1
 type                         = "byte"
 
-[modbus.communication.jetson-plc.imaging-ready]
+#----------------------------------------------------------------
+# Discrete Inputs
+#
+# Status from Jetson to PLC
+#----------------------------------------------------------------
+[modbus.data-mapping.discrete-inputs]
+starting-address             = 0
+
+[modbus.data-mapping.discrete-inputs.data]
+[modbus.data-mapping.discrete-inputs.data.heartbeat]
+address                      = 0
+type                         = "byte"
+
+[modbus.data-mapping.discrete-inputs.data.imaging-ready]
+address                      = 1
+type                         = "byte"
+
+[modbus.data-mapping.discrete-inputs.data.imaging-done]
 address                      = 2
 type                         = "byte"
 
-[modbus.communication.jetson-plc.heartbeat]
-address                      = 3
-type                         = "byte"
+#----------------------------------------------------------------
+# Input Registers
+#
+# Data from Jetson to PLC
+#----------------------------------------------------------------
+[modbus.data-mapping.input-registers]
+starting-address             = 0
 
-[modbus.data]
-type                         = "input-register"
+[modbus.data-mapping.input-registers.data]
+[modbus.data-mapping.input-registers.data.year]
+address                      = 0
+type                         = "word"
+length                       = 1
 
-[modbus.data.year]
+[modbus.data-mapping.input-registers.data.month]
 address                      = 1
 type                         = "word"
 length                       = 1
 
-[modbus.data.month]
+[modbus.data-mapping.input-registers.data.day]
 address                      = 2
 type                         = "word"
 length                       = 1
 
-[modbus.data.day]
+[modbus.data-mapping.input-registers.data.hour]
 address                      = 3
 type                         = "word"
 length                       = 1
 
-[modbus.data.hour]
+[modbus.data-mapping.input-registers.data.minute]
 address                      = 4
 type                         = "word"
 length                       = 1
 
-[modbus.data.minute]
+[modbus.data-mapping.input-registers.data.second]
 address                      = 5
 type                         = "word"
 length                       = 1
 
-[modbus.data.second]
+#----------------------------------------------------------------
+# Holding Registers
+#
+# Data from PLC to Jetson
+#----------------------------------------------------------------
+[modbus.data-mapping.holding-registers]
+starting-address             = 0
+
+[modbus.data-mapping.holding-registers.data]
+[modbus.data-mapping.holding-registers.data.year]
+address                      = 0
+type                         = "word"
+length                       = 1
+
+[modbus.data-mapping.holding-registers.data.month]
+address                      = 1
+type                         = "word"
+length                       = 1
+
+[modbus.data-mapping.holding-registers.data.day]
+address                      = 2
+type                         = "word"
+length                       = 1
+
+[modbus.data-mapping.holding-registers.data.hour]
+address                      = 3
+type                         = "word"
+length                       = 1
+
+[modbus.data-mapping.holding-registers.data.minute]
+address                      = 4
+type                         = "word"
+length                       = 1
+
+[modbus.data-mapping.holding-registers.data.second]
+address                      = 5
+type                         = "word"
+length                       = 1
+
+[modbus.data-mapping.holding-registers.data.sku-card-instruction]
 address                      = 6
 type                         = "word"
 length                       = 1
 
-[modbus.data.sku-card-instruction]
-address                      = 7
+[modbus.data-mapping.holding-registers.data.sku-number]
+address                      = 6
 type                         = "word"
 length                       = 1
 
-[modbus.data.sku-number]
+[modbus.data-mapping.holding-registers.data.sku-production-day]
 address                      = 8
 type                         = "word"
 length                       = 1
 
-[modbus.data.sku-production-day]
+[modbus.data-mapping.holding-registers.data.tray-barcode]
 address                      = 9
-type                         = "word"
-length                       = 1
+type                         = "dword"
+length                       = 2
 
-[modbus.data.heartbit]
-address                      = 10
-type                         = "word"
-length                       = 1
-
-[modbus.data.tray-barcode]
+[modbus.data-mapping.holding-registers.data.lid-barcode]
 address                      = 11
 type                         = "dword"
 length                       = 2
 
-[modbus.data.lid-barcode]
+[modbus.data-mapping.holding-registers.data.batch-id]
 address                      = 13
 type                         = "dword"
 length                       = 2
 
-[modbus.data.batch-id]
+[modbus.data-mapping.holding-registers.data.infection-id]
 address                      = 15
-type                         = "dword"
-length                       = 2
-
-[modbus.data.infection-id]
-address                      = 17
 type                         = "dword"
 length                       = 2

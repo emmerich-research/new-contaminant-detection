@@ -23,6 +23,8 @@
 
 #include <libcore/core.hpp>
 
+#include <libstorage/storage.hpp>
+
 #include <libgui/gui.hpp>
 
 // 4. Local
