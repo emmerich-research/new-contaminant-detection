@@ -27,6 +27,7 @@
 
 // 2. Vendor
 // 2.1. ModbusCPP
+#include <asio2/base/timer.hpp>
 #include <modbuscpp/modbus.hpp>
 
 // 3. Internal Project
