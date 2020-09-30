@@ -9,6 +9,7 @@
 
 #include <boost/core/noncopyable.hpp>
 
+#include <asio2/base/timer.hpp>
 #include <modbuscpp/modbus.hpp>
 
 #include <libcore/core.hpp>
@@ -95,6 +96,10 @@ class Slave : private boost::noncopyable {
    * Modbus server
    */
   modbus::server::pointer server_;
+  /**
+   * Asio2 timer
+   */
+  asio2::timer timer_;
 };
 }  // namespace server
 
