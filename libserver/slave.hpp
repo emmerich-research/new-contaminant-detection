@@ -21,22 +21,70 @@ namespace server {
 class Slave : private boost::noncopyable {
  public:
   /**
-   * Modbus slave wrapper
+   * Connection callback type
+   */
+  using conn_cb_t = modbus::server::conn_cb_t;
+
+  /**
+   * Modbus slave wrapper constructor
    *
    * @param config    server config
    */
   Slave(const Config* config);
 
   /**
-   * Run server slave
+   * Modbus slave destructor
+   */
+  ~Slave();
+
+  /**
+   * Run Modbus slave server
    */
   void run();
+
+  /**
+   * Stop Modbus slave server
+   */
+  void stop();
+
+  /**
+   * Get data table
+   *
+   * @return data table
+   */
+  inline modbus::table& data_table() { return server_->data_table(); }
+
+  /**
+   * Get data table (const)
+   *
+   * @return data table (const)
+   */
+  inline const modbus::table& data_table() const {
+    return server_->data_table();
+  }
 
  private:
   /**
    * Init Modbus slave
    */
   void init();
+
+  /**
+   * Connect callback
+   *
+   * @param session client session
+   * @param table   data table
+   */
+  void on_connect(modbus::server::session_ptr_t& session, modbus::table& table);
+
+  /**
+   * Disconnect callback
+   *
+   * @param session client session
+   * @param table   data table
+   */
+  void on_disconnect(modbus::server::session_ptr_t& session,
+                     modbus::table&                 table);
 
  private:
   /**

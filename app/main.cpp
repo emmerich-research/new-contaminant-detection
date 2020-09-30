@@ -31,13 +31,15 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     return ATM_ERR;
   }
 
-  server::Slave slave(&server_config);
-
-  cv::Mat frame, blob;
-
+  server::Slave          slave(&server_config);
+  server::DataMapper     data_mapper{&server_config, &slave};
+  cv::Mat                frame, blob;
   detector::BlobDetector blob_detector;
+  gui::Manager           ui_manager;
 
-  gui::Manager ui_manager;
+  // listeners
+  storage::StorageListener storage_listener{&server_config, &data_mapper,
+                                            &frame};
 
   ui_manager.init("Emmerich Vision", 400, 400);
 
@@ -62,12 +64,16 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
   // create windows
   ui_manager.add<gui::ImageWindow>("image", "image", 300, 300);
   ui_manager.add<gui::ImageWindow>("blob", "blob-detection", 300, 300);
+  ui_manager.add<server::DataWindow>("data", &server_config, &data_mapper);
 
   auto* image_window = dynamic_cast<gui::ImageWindow*>(ui_manager.get("image"));
   auto* blob_window = dynamic_cast<gui::ImageWindow*>(ui_manager.get("blob"));
 
   LOG_INFO("Running server...");
   slave.run();
+
+  LOG_INFO("Running listeners...");
+  storage_listener.start();
 
   while (ui_manager.handle_events()) {
     if (cap.read(frame)) {
@@ -83,6 +89,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     }
   }
 
+  storage_listener.stop();
+  slave.stop();
   cap.release();
   ui_manager.exit();
 

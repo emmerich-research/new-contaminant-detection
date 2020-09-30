@@ -43,4 +43,8 @@
 
 #include "slave.hpp"
 
+#include "data-mapper.hpp"
+
+#include "data-window.hpp"
+
 #endif  // LIB_SERVER_SERVER_HPP_

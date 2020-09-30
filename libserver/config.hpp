@@ -30,8 +30,9 @@ struct meta_t {
 
 namespace mapping {
 enum class type_t { coils, discrete_inputs, input_regs, holding_regs };
+enum class alt_type_t { plc_status, jetson_status, jetson_data, plc_data };
 typedef std::pair<std::string, data::meta_t> entry_t;
-typedef std::vector<entry_t>               info_t;
+typedef std::vector<entry_t>                 info_t;
 
 struct meta_t {
   std::uint16_t starting_address;
@@ -78,7 +79,7 @@ class Config {
    *
    * @return Jetson data metadata
    */
-  const data::meta_t&           jetson_data(const std::string& id) const;
+  const data::meta_t& jetson_data(const std::string& id) const;
 
   /**
    * Get Jetson status mapping
@@ -108,7 +109,7 @@ class Config {
    *
    * @return PLC data metadata
    */
-  const data::meta_t&           plc_data(const std::string& id) const;
+  const data::meta_t& plc_data(const std::string& id) const;
 
   /**
    * Get PLC status mapping
@@ -122,7 +123,7 @@ class Config {
    *
    * @return PLC status metadata
    */
-  const data::meta_t&           plc_status(const std::string& id) const;
+  const data::meta_t& plc_status(const std::string& id) const;
 
   /**
    * Get server port
@@ -189,7 +190,7 @@ class Config {
    * PLC status
    */
   mapping::data_t plc_status_;
-  };
+};
 }  // namespace server
 
 NAMESPACE_END

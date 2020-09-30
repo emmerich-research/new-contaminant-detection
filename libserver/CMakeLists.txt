@@ -1,6 +1,14 @@
 project(server)
 
-ucm_add_files("logger.cpp" "config.cpp" "slave.cpp" TO SOURCES)
+ucm_add_files(
+  "logger.cpp"
+  "config.cpp"
+  "slave.cpp"
+  "data-mapper.cpp"
+  "data-window.cpp"
+  TO
+  SOURCES
+)
 
 ucm_add_target(
   NAME

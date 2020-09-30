@@ -16,12 +16,14 @@ NAMESPACE_BEGIN
 
 namespace server {
 class Config;
+class DataMapper;
 }  // namespace server
 
 namespace storage {
 class StorageListener : public Listener {
  public:
   StorageListener(const server::Config* config,
+                  server::DataMapper*   data_mapper,
                   const cv::Mat*        image,
                   bool                  autorun = false);
   virtual ~StorageListener() override;
@@ -41,8 +43,11 @@ class StorageListener : public Listener {
 
   void write_status(const std::string& key, bool value);
 
+  long long read_data(const std::string& key) const;
+
  private:
   const server::Config*           config_;
+  server::DataMapper*             data_mapper_;
   Database                        database_;
   const cv::Mat*                  image_;
   boost::uuids::random_generator  generator;
