@@ -14,18 +14,18 @@ class Mat;
 
 NAMESPACE_BEGIN
 
-namespace networking {
-class ModbusConfig;
-class Modbus;
-}  // namespace networking
+namespace server {
+class Config;
+class DataMapper;
+}  // namespace server
 
 namespace storage {
 class StorageListener : public Listener {
  public:
-  StorageListener(const networking::ModbusConfig* config,
-                  networking::Modbus*             modbus,
-                  const cv::Mat*                  image,
-                  bool                            autorun = false);
+  StorageListener(const server::Config* config,
+                  server::DataMapper*   data_mapper,
+                  const cv::Mat*        image,
+                  bool                  autorun = false);
   virtual ~StorageListener() override;
 
   virtual void start() override;
@@ -39,19 +39,18 @@ class StorageListener : public Listener {
 
   inline const cv::Mat* image() const { return image_; }
 
-  inline const networking::ModbusConfig* config() const { return config_; }
-
-  inline const networking::Modbus* modbus() const { return modbus_; }
-  inline networking::Modbus*       modbus() { return modbus_; }
+  inline const server::Config* config() const { return config_; }
 
   void write_status(const std::string& key, bool value);
 
+  long long read_data(const std::string& key) const;
+
  private:
-  const networking::ModbusConfig* config_;
-  networking::Modbus*            modbus_;
-  Database                       database_;
-  const cv::Mat*                 image_;
-  boost::uuids::random_generator generator;
+  const server::Config*           config_;
+  server::DataMapper*             data_mapper_;
+  Database                        database_;
+  const cv::Mat*                  image_;
+  boost::uuids::random_generator  generator;
 };
 }  // namespace storage
 

@@ -80,7 +80,7 @@ if(Boost_FOUND
 
   add_subdirectory(libutil)
   add_subdirectory(libcore)
-  add_subdirectory(libnetworking)
+  add_subdirectory(libserver)
   add_subdirectory(libdetector)
   add_subdirectory(libgui)
   add_subdirectory(libstorage)

@@ -26,9 +26,6 @@ Manager::Manager(ImVec4 clear_color, std::size_t num_window)
 
 Manager::~Manager() {
   // Cleanup
-  for (const auto* window : windows()) {
-    delete window;
-  }
   windows().clear();
 
   if (!exited()) {
@@ -128,9 +125,13 @@ bool Manager::handle_events() {
   return should_not_close;
 }
 
-void Manager::add_window(Window* window) {
-  windows().push_back(window);
+Window* Manager::get(const std::string& key) {
+  return windows()[key].get();
 }
+
+// void Manager::add_window(Window* window) {
+//   windows().push_back(window);
+// }
 
 void Manager::render() {
   ImGui_ImplOpenGL3_NewFrame();
@@ -147,7 +148,7 @@ void Manager::render() {
   }
 
   // render windows
-  for (auto* s_window : windows())
+  for (auto&& [_, s_window] : windows())
     s_window->render();
 
   ImGui::Render();
@@ -161,7 +162,7 @@ void Manager::render() {
   glfwSwapBuffers(window());
 
   // after render windows
-  for (auto* s_window : windows())
+  for (auto&& [_, s_window] : windows())
     s_window->after_render();
 }
 }  // namespace gui

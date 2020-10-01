@@ -16,21 +16,21 @@ using PrimaryKey = int;
 using Hash = std::string;
 
 struct Image {
-  PrimaryKey    id;
-  Hash          hash;
-  unsigned long year;
-  unsigned long month;
-  unsigned long day;
-  unsigned long hour;
-  unsigned long minute;
-  unsigned long second;
-  unsigned long sku_card;
-  unsigned long sku_number;
-  unsigned long sku_prod_day;
-  unsigned long tray_barcode;
-  unsigned long lid_barcode;
-  unsigned long batch_id;
-  unsigned long infection_id;
+  PrimaryKey id;
+  Hash       hash;
+  long long  year;
+  long long  month;
+  long long  day;
+  long long  hour;
+  long long  minute;
+  long long  second;
+  long long  sku_card;
+  long long  sku_number;
+  long long  sku_prod_day;
+  long long  tray_barcode;
+  long long  lid_barcode;
+  long long  batch_id;
+  long long  infection_id;
 };
 }  // namespace schema
 

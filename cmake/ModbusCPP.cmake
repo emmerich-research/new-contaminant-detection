@@ -6,5 +6,5 @@ endif()
 CPMAddPackage(
   NAME modbuscpp
   GITHUB_REPOSITORY rayandrews/modbus-cpp
-  VERSION 1.0.0
+  GIT_TAG 84d8b5d3a551035783c04f8efe86b4aadb8faaa9
 )

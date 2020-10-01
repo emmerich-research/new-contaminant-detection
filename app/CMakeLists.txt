@@ -8,15 +8,8 @@ ucm_add_target(NAME app TYPE EXECUTABLE SOURCES ${SOURCES})
 
 target_link_libraries(
   app
-  PRIVATE asio2
-          struc
-          fmt
-          modbuscpp
-          "${PROJECT_NAMESPACE}::util"
-          "${PROJECT_NAMESPACE}::core"
-          "${PROJECT_NAMESPACE}::networking"
-          "${PROJECT_NAMESPACE}::detector"
-          "${PROJECT_NAMESPACE}::gui"
+  PRIVATE "${PROJECT_NAMESPACE}::util" "${PROJECT_NAMESPACE}::core" "${PROJECT_NAMESPACE}::server"
+          "${PROJECT_NAMESPACE}::detector" "${PROJECT_NAMESPACE}::gui"
           "${PROJECT_NAMESPACE}::storage"
 )
 

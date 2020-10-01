@@ -20,7 +20,7 @@ foreach(driver_file ${driver_sources})
             modbuscpp
             "${PROJECT_NAMESPACE}::util"
             "${PROJECT_NAMESPACE}::core"
-            "${PROJECT_NAMESPACE}::networking"
+            "${PROJECT_NAMESPACE}::server"
   )
 
   target_set_warnings(${driver_exe} ENABLE ALL DISABLE Annoying)

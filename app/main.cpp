@@ -5,10 +5,12 @@
 #include <stdexcept>
 #include <utility>
 
+#include <modbuscpp/modbus.hpp>
+
 #include <libcore/core.hpp>
 #include <libdetector/detector.hpp>
 #include <libgui/gui.hpp>
-#include <libnetworking/networking.hpp>
+#include <libserver/server.hpp>
 #include <libstorage/storage.hpp>
 #include <libutil/util.hpp>
 
@@ -20,39 +22,25 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     return ATM_ERR;
   }
 
-  cv::VideoCapture cap{Config::get()->camera_idx(), cv::CAP_V4L2};
+  auto*          config = Config::get();
+  server::Config server_config{config};
+
+  cv::VideoCapture cap{config->camera_idx(), cv::CAP_V4L2};
   if (!cap.isOpened()) {
     LOG_ERROR("Camera cannot be opened!");
     return ATM_ERR;
   }
 
-  networking::ModbusConfig config{Config::get()};
-  const auto&              timeout = config.timeout();
-
-  networking::Modbus::ErrorCode ec;
-  networking::modbus::TCP       modbus{config.host().c_str(), config.port(),
-                                 timeout.connect, timeout.request,
-                                 timeout.response};
-
-  ec = modbus.connect();
-
-  if (ec) {
-    LOG_ERROR("Connection error, message: {}", ec.message());
-    return ATM_ERR;
-  }
-
-  cv::Mat                  frame, blob;
-  storage::StorageListener storage_listener{
-      reinterpret_cast<const networking::ModbusConfig*>(&config), &modbus,
-      reinterpret_cast<const cv::Mat*>(&frame),
-      /** autorun */ true};
-  networking::ModbusListener modbus_listener{
-      reinterpret_cast<const networking::ModbusConfig*>(&config), &modbus,
-      /** autorun */ true};
-
-  detector::BlobDetector blob_detector;
-
+  server::Slave      slave(&server_config);
+  server::DataMapper data_mapper{&server_config, &slave};
+  cv::Mat            frame;
+  cv::Mat            blob;
+  // detector::BlobDetector blob_detector;
   gui::Manager ui_manager;
+
+  // listeners
+  storage::StorageListener storage_listener{&server_config, &data_mapper,
+                                            &frame};
 
   ui_manager.init("Emmerich Vision", 400, 400);
 
@@ -75,14 +63,19 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
   });
 
   // create windows
-  gui::ImageWindow* image_window = new gui::ImageWindow("image", 300, 300);
-  gui::ImageWindow* blob_window =
-      new gui::ImageWindow("blob-detection", 300, 300);
+  ui_manager.add<gui::ImageWindow>("image", "image", 300, 300);
+  ui_manager.add<gui::ImageWindow>("blob", "blob-detection", 300, 300);
+  ui_manager.add<server::DataWindow>("data", &server_config, &data_mapper);
 
-  // add windows
-  ui_manager.add_window(image_window);
-  ui_manager.add_window(blob_window);
-  ui_manager.add_window<networking::modbus::ModbusWindow>(config);
+  auto* image_window = dynamic_cast<gui::ImageWindow*>(ui_manager.get("image"));
+  // auto* blob_window =
+  // dynamic_cast<gui::ImageWindow*>(ui_manager.get("blob"));
+
+  LOG_INFO("Running server...");
+  slave.run();
+
+  LOG_INFO("Running listeners...");
+  storage_listener.start();
 
   while (ui_manager.handle_events()) {
     if (cap.read(frame)) {
@@ -91,22 +84,15 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
       // show
       image_window->frame(&frame);
 
-      blob_detector.detect(std::move(frame), std::move(blob));
-      blob_window->frame(&blob);
+      // blob_detector.detect(std::move(frame), std::move(blob));
+      // blob_window->frame(&blob);
 
       ui_manager.render();
     }
   }
 
   storage_listener.stop();
-  modbus_listener.stop();
-
-  ec = modbus.close();
-
-  if (ec) {
-    LOG_ERROR("Cannot close connection to Modbus!");
-  }
-
+  slave.stop();
   cap.release();
   ui_manager.exit();
 
