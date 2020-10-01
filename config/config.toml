@@ -27,15 +27,16 @@ port                         = 1502
 # Status from PLC to Jetson
 #----------------------------------------------------------------
 [modbus.data-mapping.coils]
-starting-address             = 0
+starting-address             = 1
+capacity                     = 10
 
 [modbus.data-mapping.coils.data]
 [modbus.data-mapping.coils.data.heartbeat]
-address                      = 0
+address                      = 1
 type                         = "byte"
 
 [modbus.data-mapping.coils.data.imaging-request]
-address                      = 1
+address                      = 2
 type                         = "byte"
 
 #----------------------------------------------------------------
@@ -44,19 +45,20 @@ type                         = "byte"
 # Status from Jetson to PLC
 #----------------------------------------------------------------
 [modbus.data-mapping.discrete-inputs]
-starting-address             = 0
+starting-address             = 1
+capacity                     = 10
 
 [modbus.data-mapping.discrete-inputs.data]
 [modbus.data-mapping.discrete-inputs.data.heartbeat]
-address                      = 0
-type                         = "byte"
-
-[modbus.data-mapping.discrete-inputs.data.imaging-ready]
 address                      = 1
 type                         = "byte"
 
-[modbus.data-mapping.discrete-inputs.data.imaging-done]
+[modbus.data-mapping.discrete-inputs.data.imaging-ready]
 address                      = 2
+type                         = "byte"
+
+[modbus.data-mapping.discrete-inputs.data.imaging-done]
+address                      = 3
 type                         = "byte"
 
 #----------------------------------------------------------------
@@ -65,36 +67,37 @@ type                         = "byte"
 # Data from Jetson to PLC
 #----------------------------------------------------------------
 [modbus.data-mapping.input-registers]
-starting-address             = 0
+starting-address             = 1
+capacity                     = 20
 
 [modbus.data-mapping.input-registers.data]
 [modbus.data-mapping.input-registers.data.year]
-address                      = 0
-type                         = "word"
-length                       = 1
-
-[modbus.data-mapping.input-registers.data.month]
 address                      = 1
 type                         = "word"
 length                       = 1
 
-[modbus.data-mapping.input-registers.data.day]
+[modbus.data-mapping.input-registers.data.month]
 address                      = 2
 type                         = "word"
 length                       = 1
 
-[modbus.data-mapping.input-registers.data.hour]
+[modbus.data-mapping.input-registers.data.day]
 address                      = 3
 type                         = "word"
 length                       = 1
 
-[modbus.data-mapping.input-registers.data.minute]
+[modbus.data-mapping.input-registers.data.hour]
 address                      = 4
 type                         = "word"
 length                       = 1
 
-[modbus.data-mapping.input-registers.data.second]
+[modbus.data-mapping.input-registers.data.minute]
 address                      = 5
+type                         = "word"
+length                       = 1
+
+[modbus.data-mapping.input-registers.data.second]
+address                      = 6
 type                         = "word"
 length                       = 1
 
@@ -104,70 +107,71 @@ length                       = 1
 # Data from PLC to Jetson
 #----------------------------------------------------------------
 [modbus.data-mapping.holding-registers]
-starting-address             = 0
+starting-address             = 1
+capacity                     = 20
 
 [modbus.data-mapping.holding-registers.data]
 [modbus.data-mapping.holding-registers.data.year]
-address                      = 0
-type                         = "word"
-length                       = 1
-
-[modbus.data-mapping.holding-registers.data.month]
 address                      = 1
 type                         = "word"
 length                       = 1
 
-[modbus.data-mapping.holding-registers.data.day]
+[modbus.data-mapping.holding-registers.data.month]
 address                      = 2
 type                         = "word"
 length                       = 1
 
-[modbus.data-mapping.holding-registers.data.hour]
+[modbus.data-mapping.holding-registers.data.day]
 address                      = 3
 type                         = "word"
 length                       = 1
 
-[modbus.data-mapping.holding-registers.data.minute]
+[modbus.data-mapping.holding-registers.data.hour]
 address                      = 4
 type                         = "word"
 length                       = 1
 
-[modbus.data-mapping.holding-registers.data.second]
+[modbus.data-mapping.holding-registers.data.minute]
 address                      = 5
 type                         = "word"
 length                       = 1
 
-[modbus.data-mapping.holding-registers.data.sku-card-instruction]
+[modbus.data-mapping.holding-registers.data.second]
 address                      = 6
 type                         = "word"
 length                       = 1
 
-[modbus.data-mapping.holding-registers.data.sku-number]
+[modbus.data-mapping.holding-registers.data.sku-card-instruction]
 address                      = 7
 type                         = "word"
 length                       = 1
 
-[modbus.data-mapping.holding-registers.data.sku-production-day]
+[modbus.data-mapping.holding-registers.data.sku-number]
 address                      = 8
 type                         = "word"
 length                       = 1
 
-[modbus.data-mapping.holding-registers.data.tray-barcode]
+[modbus.data-mapping.holding-registers.data.sku-production-day]
 address                      = 9
+type                         = "word"
+length                       = 1
+
+[modbus.data-mapping.holding-registers.data.tray-barcode]
+address                      = 10
 type                         = "dword"
 length                       = 2
 
 [modbus.data-mapping.holding-registers.data.lid-barcode]
-address                      = 11
+address                      = 12
 type                         = "dword"
 length                       = 2
 
 [modbus.data-mapping.holding-registers.data.batch-id]
-address                      = 13
+address                      = 14
 type                         = "dword"
 length                       = 2
 
 [modbus.data-mapping.holding-registers.data.infection-id]
-address                      = 15
+address                      = 16
 type                         = "dword"
 length                       = 2

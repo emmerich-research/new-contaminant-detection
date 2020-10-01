@@ -40,17 +40,18 @@ DataMapper::DataMapper(const Config* config, Slave* slave)
 
 DataMapper::~DataMapper() {}
 
-long long DataMapper::data(mapping::alt_type_t type, std::string id) const {
+long long DataMapper::data(mapping::alt_type_t type,
+                           const std::string&  id) const {
   switch (type) {
     case mapping::alt_type_t::plc_data: {
-      auto& meta = config_->plc_data(id);
+      const auto& meta = config_->plc_data(id);
       auto [start, end] = slave_->data_table().holding_registers().get(
           modbus::address_t{meta.address},
           modbus::read_num_regs_t{meta.length});
       return convert_uint16_to_ll(meta.type, start, end);
     }
     case mapping::alt_type_t::jetson_data: {
-      auto& meta = config_->jetson_data(id);
+      const auto& meta = config_->plc_data(id);
       auto [start, end] = slave_->data_table().input_registers().get(
           modbus::address_t{meta.address},
           modbus::read_num_regs_t{meta.length});
@@ -61,7 +62,7 @@ long long DataMapper::data(mapping::alt_type_t type, std::string id) const {
   }
 }
 
-bool DataMapper::status(mapping::alt_type_t type, std::string id) const {
+bool DataMapper::status(mapping::alt_type_t type, const std::string& id) const {
   switch (type) {
     case mapping::alt_type_t::plc_status: {
       auto& meta = config_->plc_status(id);
@@ -77,7 +78,9 @@ bool DataMapper::status(mapping::alt_type_t type, std::string id) const {
   }
 }
 
-void DataMapper::status(mapping::alt_type_t type, std::string id, bool value) {
+void DataMapper::status(mapping::alt_type_t type,
+                        const std::string&  id,
+                        bool                value) {
   switch (type) {
     case mapping::alt_type_t::plc_status: {
       auto& meta = config_->plc_status(id);

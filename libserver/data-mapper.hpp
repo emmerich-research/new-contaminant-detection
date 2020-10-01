@@ -60,7 +60,7 @@ class DataMapper {
    * @param id    data id
    * @return data
    */
-  long long data(mapping::alt_type_t type, std::string id) const;
+  long long data(mapping::alt_type_t type, const std::string& id) const;
 
   /**
    * Set data
@@ -70,7 +70,7 @@ class DataMapper {
    * @param value value of specified id of data
    */
   template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
-  void data(mapping::alt_type_t type, std::string id, T value) {
+  void data(mapping::alt_type_t type, const std::string& id, T value) {
     if constexpr (sizeof(T) <= 2) {
     } else if constexpr (sizeof(T) == 3) {
     } else if constexpr (sizeof(T) == 4) {
@@ -84,7 +84,7 @@ class DataMapper {
    * @param id    status id
    * @return status
    */
-  bool status(mapping::alt_type_t type, std::string id) const;
+  bool status(mapping::alt_type_t type, const std::string& id) const;
 
   /**
    * Set status
@@ -93,7 +93,7 @@ class DataMapper {
    * @param id    status id
    * @param value value of specified id of status
    */
-  void status(mapping::alt_type_t type, std::string id, bool value);
+  void status(mapping::alt_type_t type, const std::string& id, bool value);
 
  private:
   /**

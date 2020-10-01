@@ -56,10 +56,6 @@ struct from<ns(server::mapping::data_t)> {
           find<std::uint16_t>(v, "starting-address");
     }
 
-    if (v.contains("capacity")) {
-      data_mapping.meta.capacity = find<std::uint16_t>(v, "capacity");
-    }
-
     if (v.contains("data")) {
       for (const auto& [k, _] : find<toml::table>(v, "data")) {
         auto metadata = find<ns(server::data::meta_t)>(v, "data", k);
@@ -76,6 +72,11 @@ struct from<ns(server::mapping::data_t)> {
     }
 
     data_mapping.meta.capacity = max_address - min_address + 1;
+
+    // capacity
+    if (v.contains("capacity")) {
+      data_mapping.meta.capacity = find<std::uint16_t>(v, "capacity");
+    }
 
     return data_mapping;
   }
