@@ -48,48 +48,8 @@ class StateImpl : public StackObj {
  public:
   using StateMutex = std::shared_mutex;
   using StateLock = std::lock_guard<StateMutex>;
-  using StatusTable = std::unordered_map<std::string, bool>;
-  using DataTable = std::unordered_map<std::string, unsigned long>;
 
  public:
-  /**
-   * Get status table
-   */
-  StatusTable& status_table();
-  /**
-   * Get entry from status table
-   *
-   * @param id id of entry
-   *
-   * @return status of specified entry id in status table
-   */
-  bool status_table(const std::string& id);
-  /**
-   * Create/Update status table entry
-   *
-   * @param id    id of entry
-   * @param value new status value for specific id
-   */
-  void status_table(const std::string& id, bool value);
-  /**
-   * Get data table
-   */
-  DataTable& data_table();
-  /**
-   * Get entry from data table
-   *
-   * @param id id of entry
-   *
-   * @return value of specified entry id in data table
-   */
-  unsigned long data_table(const std::string& id);
-  /**
-   * Create/Update data table entry
-   *
-   * @param id    id of entry
-   * @param value new data value for specific id
-   */
-  void data_table(const std::string& id, unsigned long value);
   /**
    * Get mutex
    *
@@ -112,14 +72,6 @@ class StateImpl : public StackObj {
    *  Mutex for locking
    */
   StateMutex mutex_;
-  /**
-   * Status table for and from PLC
-   */
-  StatusTable status_table_;
-  /**
-   * Data table from PLC
-   */
-  DataTable data_table_;
 };
 }  // namespace impl
 

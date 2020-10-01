@@ -12,7 +12,7 @@
 
 #include <opencv4/opencv2/opencv.hpp>
 
-#include <external/imgui/imgui.h>
+#include <imgui.h>
 
 #include <libcore/core.hpp>
 

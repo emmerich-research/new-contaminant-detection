@@ -22,16 +22,16 @@
 
 // 2. Vendors
 // 2.1. ImGui
-#include <external/imgui/imgui.h>
+#include <imgui.h>
 
-#include <external/imgui/imconfig.h>
-// #include <external/imgui/imgui_internal.h>
-#include <external/imgui/imstb_rectpack.h>
-#include <external/imgui/imstb_truetype.h>
+#include <imconfig.h>
+// #include <imgui_internal.h>
+#include <imstb_rectpack.h>
+#include <imstb_truetype.h>
 
-#include <external/imgui/examples/imgui_impl_glfw.h>
+#include <examples/imgui_impl_glfw.h>
 
-#include <external/imgui/examples/imgui_impl_opengl3.h>
+#include <examples/imgui_impl_opengl3.h>
 
 // 2.2. Glad
 #include <glad/glad.h>
