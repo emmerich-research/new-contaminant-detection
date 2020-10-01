@@ -1,181 +1,70 @@
-#include <cstdlib>
-#include <type_traits>
+#include <chrono>
+#include <iomanip>
+#include <iostream>
+#include <thread>
+#include <utility>
 
-#include <libcore/core.hpp>
-#include <libnetworking/networking.hpp>
-#include <libutil/util.hpp>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/select.h>
+#include <sys/socket.h>
 
-const unsigned int SLAVE_ID = 0x01;
+#include <spdlog/spdlog.h>
 
-const std::uint16_t BITS_ADDRESS = 0x00;
-const std::uint16_t REGISTER_ADDRESS = 0x00;
+#include <modbuscpp/modbus.hpp>
 
-int main(int argc, const char* argv[]) {
-  USE_NAMESPACE
+class server_logger : public modbus::logger {
+ public:
+  explicit server_logger(bool debug = false) : modbus::logger(debug) {}
 
-  if (initialize_core()) {
-    return 1;
+  virtual ~server_logger() override {}
+
+ protected:
+  inline virtual void error_impl(
+      const std::string& message) const noexcept override {
+    spdlog::error("{}", message);
   }
 
-  if (argc != 3) {
-    std::cerr << "Usage: modbus-slave <hostname> <port>\n";
-    return 1;
+  inline virtual void debug_impl(
+      const std::string& message) const noexcept override {
+    if (debug_) {
+      spdlog::debug("{}", message);
+    }
   }
 
-  networking::Modbus::ErrorCode ec;
+  inline virtual void info_impl(
+      const std::string& message) const noexcept override {
+    spdlog::info("{}", message);
+  }
+};
 
-  std::shared_ptr<networking::Modbus> client =
-      networking::modbus::TCP::create(argv[1], argv[2]);
-  client->slave_id(SLAVE_ID);
-  client->connect_timeout(networking::modbus::time::seconds(10));
-  client->request_timeout(networking::modbus::time::seconds(10));
-  client->response_timeout(networking::modbus::time::seconds(10));
+int main([[maybe_unused]] int argc, [[maybe_unused]] const char** argv) {
+  spdlog::set_level(spdlog::level::debug);
+  modbus::logger::create<server_logger>(true);
 
-  client->callback(
-      [](const networking::ModbusResponse& response) {
-        std::visit(
-            [&](auto&& data) {
-              using T = std::decay_t<decltype(data)>;
-              if constexpr (std::is_same_v<T, networking::Modbus::Buffer8>) {
-                LOG_INFO("Length={}, NB={}", response.length,
-                         response.num_of_bytes);
-                // LOG_INFO("Length={}, NB={}, Buffer8 Data={}",
-                // response.length,
-                //          response.num_of_bytes, data);
-              } else if constexpr (std::is_same_v<
-                                       T, networking::Modbus::Buffer16>) {
-                LOG_INFO("Length={}, NB={}", response.length,
-                         response.num_of_bytes);
-                // LOG_INFO("Length={}, NB={}, Buffer16 Data={}",
-                // response.length,
-                //          response.num_of_bytes, data);
-              } else if constexpr (std::is_same_v<T, std::monostate>) {
-                // noop
-                // LOG_INFO("Test");
-              }
-            },
-            response.data);
+  auto&& data_table = modbus::table::create(
+      /*modbus::table::initializer_t{*/
+      // modbus::block::bits::initializer_t{modbus::address_t{0x00}, 0xFFFF,
+      // true}, modbus::block::bits::initializer_t{modbus::address_t{0x00},
+      // 0xFFFF, true},
+      // modbus::block::registers::initializer_t{modbus::address_t{0x00},
+      // 0xFFFF, 15},
+      /*modbus::block::registers::initializer_t{}}*/
+  );
+  auto&& server = modbus::server::create(std::move(data_table));
 
-        // std::visit(util::overloaded{[](networking::Modbus::Buffer8&& data) {
-        //                               LOG_INFO("Buffer8 Data {}", data);
-        //                             },
-        //                             [](networking::Modbus::Buffer16&& data) {
-        //                               LOG_INFO("Buffer16 Data {}", data);
-        //                             },
-        //                             [](std::monostate&& data) {
-
-        //                             }},
-        //            response.data);
-      },
-      [](const networking::ModbusError& error) {
-        LOG_INFO("{}", error.error);
+  server->bind_connect(
+      []([[maybe_unused]] auto& session_ptr, [[maybe_unused]] auto& table) {
+        // session_ptr->start_timer(1, std::chrono::seconds(1), [&table]() {
+        /*LOG_INFO("Input registers addr 0x00: {:#04x}",*/
+        /*table.input_registers().get(modbus::address_t{0x00}));*/
+        //});
       });
 
-  ec = client->connect();
+  server->run();
 
-  if (ec) {
-    LOG_ERROR("Failed to connect to server, exiting...");
-    return -1;
+  while (std::getchar() != '\n') {
   }
-
-  networking::Modbus::Buffer8  buffer_8;
-  networking::Modbus::Buffer16 buffer_16;
-
-  {
-    client->write_bit(BITS_ADDRESS, true);
-    const auto&& read_bits_response =
-        client->read_bits(BITS_ADDRESS, 1, buffer_8);
-
-    if (networking::Modbus::error(read_bits_response)) {
-      LOG_ERROR("FAILED");
-      return -1;
-    }
-
-    massert(buffer_8[0] == 1, "check");
-  }
-
-  {
-    client->write_register(REGISTER_ADDRESS, 12);
-
-    const auto&& read_registers_response =
-        client->read_registers(REGISTER_ADDRESS, 0x1, buffer_16);
-
-    if (networking::Modbus::error(read_registers_response)) {
-      LOG_ERROR("FAILED");
-      return -1;
-    }
-
-    massert(buffer_16[REGISTER_ADDRESS] == 12, "check");
-  }
-
-  {
-    const std::uint8_t buff[] = {1, 1, 1, 1, 1};
-    client->write_bits(BITS_ADDRESS + 0x10, 5, buff);
-
-    const auto&& read_bits_mult_response =
-        client->read_bits(BITS_ADDRESS + 0x10, 5, buffer_8);
-
-    if (networking::Modbus::error(read_bits_mult_response)) {
-      LOG_ERROR("FAILED");
-      return -1;
-    }
-
-    massert(buffer_8[3] == 1, "check");
-    massert(buffer_8[4] == 1, "check");
-  }
-
-  {
-    const std::uint16_t buff[] = {1, 2, 3, 4, 5};
-    client->write_registers(REGISTER_ADDRESS + 0x10, 5, buff);
-
-    const auto&& read_register_mult_response =
-        client->read_registers(REGISTER_ADDRESS + 0x10, 5, buffer_16);
-
-    if (networking::Modbus::error(read_register_mult_response)) {
-      LOG_ERROR("FAILED");
-      return -1;
-    }
-
-    massert(buffer_16[0] == 1, "check");
-    massert(buffer_16[4] == 5, "check");
-  }
-
-  // {
-  //   const auto&& read_input_bits_response =
-  //       client->read_input_bits(BITS_ADDRESS, 5, buffer_8);
-
-  //   if (networking::Modbus::error(read_input_bits_response)) {
-  //     LOG_ERROR("FAILED");
-  //     return -1;
-  //   }
-
-  //   massert(buffer_8[0] == 0, "check");
-  //   massert(buffer_8[4] == 1, "check");
-  // }
-
-  // {
-  // client->read_input_registers(REGISTER_ADDRESS, 5, buffer_16);
-
-  // const auto&& read_register_mult_response =
-  //     client->read_input_registers(REGISTER_ADDRESS, 5, buffer_16);
-
-  // if (networking::Modbus::error(read_register_mult_response)) {
-  //   LOG_ERROR("FAILED");
-  //   return -1;
-  // }
-
-  // massert(buffer_16[0] == 5, "check");
-  // massert(buffer_16[4] == 1, "check");
-  // }
-
-  ec = client->close();
-
-  if (ec) {
-    LOG_ERROR("Something wrong while closing the connection");
-    return -1;
-  }
-
-  LOG_INFO("Closing connection succeed...");
 
   return 0;
 }

@@ -7,9 +7,12 @@
 
 set(PROJECT_CONFIG_DIR           "config")
 set(PROJECT_CONFIG_FILE          "${PROJECT_CONFIG_DIR}/config.toml")
-set(PROJECT_STATE_FILE           "${PROJECT_CONFIG_DIR}/state.yaml")
-set(PROJECT_MOVEMENT_EDGE_FILE   "${PROJECT_CONFIG_DIR}/edge.path")
-set(PROJECT_MOVEMENT_ZIGZAG_FILE "${PROJECT_CONFIG_DIR}/zigzag.path")
+
+# Imaging stuffs
+set(IMAGING_REQUEST_KEY          "imaging-request")
+set(IMAGING_READY_KEY            "imaging-ready")
+set(IMAGING_DONE_KEY             "imaging-done")
+set(HEARTBEAT_KEY                "heartbeat")
 
 # Copy conf folder
 file(COPY "${PROJECT_SOURCE_DIR}/config"

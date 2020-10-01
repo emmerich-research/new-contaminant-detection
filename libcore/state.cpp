@@ -9,6 +9,8 @@ StateImpl::StateImpl() {
   DEBUG_ONLY(obj_name_ = "StateImpl");
 }
 
+StateImpl::~StateImpl() {}
+
 StateImpl::StateMutex& StateImpl::mutex() {
   return mutex_;
 }

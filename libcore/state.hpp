@@ -9,6 +9,7 @@
 
 #include <shared_mutex>
 #include <thread>
+#include <unordered_map>
 #include <utility>
 
 #include <libutil/util.hpp>
@@ -48,22 +49,7 @@ class StateImpl : public StackObj {
   using StateMutex = std::shared_mutex;
   using StateLock = std::lock_guard<StateMutex>;
 
- private:
-  /**
-   * StateImpl Constructor
-   *
-   * @todo implemented soon
-   */
-  explicit StateImpl();
-  /**
-   * StateImpl Destructor
-   *
-   * Noop
-   *
-   */
-  ~StateImpl() = default;
-
- private:
+ public:
   /**
    * Get mutex
    *
@@ -73,8 +59,17 @@ class StateImpl : public StackObj {
 
  private:
   /**
+   * StateImpl Constructor
+   */
+  explicit StateImpl();
+  /**
+   * StateImpl Destructor
+   */
+  ~StateImpl();
+
+ private:
+  /**
    *  Mutex for locking
-   *
    */
   StateMutex mutex_;
 };

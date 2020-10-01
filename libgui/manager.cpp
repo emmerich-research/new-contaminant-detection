@@ -2,12 +2,12 @@
 
 #include "manager.hpp"
 
-#include <external/imgui/imconfig.h>
-// #include <external/imgui/imstb_rectpack.h>
-// #include <external/imgui/imstb_truetype.h>
+#include <imconfig.h>
+// #include <imstb_rectpack.h>
+// #include <imstb_truetype.h>
 
-#include <external/imgui/examples/imgui_impl_glfw.h>
-#include <external/imgui/examples/imgui_impl_opengl3.h>
+#include <examples/imgui_impl_glfw.h>
+#include <examples/imgui_impl_opengl3.h>
 
 #include <glad/glad.h>
 
@@ -26,9 +26,6 @@ Manager::Manager(ImVec4 clear_color, std::size_t num_window)
 
 Manager::~Manager() {
   // Cleanup
-  for (const auto* window : windows()) {
-    delete window;
-  }
   windows().clear();
 
   if (!exited()) {
@@ -99,10 +96,9 @@ void Manager::init(const char* name, int width, int height) {
   ImGui_ImplOpenGL3_Init(glsl_version);
 
   ImFontConfig font_config;
-  font_config.SizePixels = 20.0f;
+  font_config.SizePixels = 25.0f;
 
   ImGuiIO& io = ImGui::GetIO();
-  (void)io;
   io.Fonts->AddFontDefault(&font_config);
 }
 
@@ -129,9 +125,13 @@ bool Manager::handle_events() {
   return should_not_close;
 }
 
-void Manager::add_window(Window* window) {
-  windows().push_back(window);
+Window* Manager::get(const std::string& key) {
+  return windows()[key].get();
 }
+
+// void Manager::add_window(Window* window) {
+//   windows().push_back(window);
+// }
 
 void Manager::render() {
   ImGui_ImplOpenGL3_NewFrame();
@@ -141,8 +141,6 @@ void Manager::render() {
   {
     ImGui::Begin("Panel");
 
-    // ImGui::SliderFloat("gain", &gain, 0.0f, 2.0f, "%.3f");
-
     ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
                 ImGui::GetIO().Framerate);
 
@@ -150,7 +148,7 @@ void Manager::render() {
   }
 
   // render windows
-  for (auto* s_window : windows())
+  for (auto&& [_, s_window] : windows())
     s_window->render();
 
   ImGui::Render();
@@ -160,10 +158,12 @@ void Manager::render() {
   glClearColor(clear_color().x, clear_color().y, clear_color().z,
                clear_color().w);
   glClear(GL_COLOR_BUFFER_BIT);
-
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
   glfwSwapBuffers(window());
+
+  // after render windows
+  for (auto&& [_, s_window] : windows())
+    s_window->after_render();
 }
 }  // namespace gui
 

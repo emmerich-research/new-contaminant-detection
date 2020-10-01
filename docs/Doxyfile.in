@@ -775,7 +775,7 @@ INPUT                   = @CMAKE_CURRENT_SOURCE_DIR@/README.md
 INPUT                  += @CMAKE_CURRENT_BINARY_DIR@/libutil
 INPUT                  += @CMAKE_CURRENT_SOURCE_DIR@/libcore
 INPUT                  += @CMAKE_CURRENT_BINARY_DIR@/libcore/common.hpp
-INPUT                  += @CMAKE_CURRENT_SOURCE_DIR@/libnetworking
+INPUT                  += @CMAKE_CURRENT_SOURCE_DIR@/libmodbus
 INPUT                  += @CMAKE_CURRENT_SOURCE_DIR@/app
 
 

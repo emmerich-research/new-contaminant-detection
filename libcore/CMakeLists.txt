@@ -7,8 +7,10 @@ ucm_add_files(
   "config.cpp"
   "logger.cpp"
   "state.cpp"
+  "listener.cpp"
+
   TO SOURCES)
-  
+
 ucm_add_target(
   NAME core
   TYPE STATIC
@@ -25,6 +27,7 @@ target_include_directories(core PUBLIC
 
 target_link_libraries(core PUBLIC
   ${CMAKE_THREAD_LIBS_INIT}
+  fmt::fmt
   spdlog::spdlog
   toml11::toml11
   "${PROJECT_NAMESPACE}::util")
@@ -36,7 +39,7 @@ target_set_warnings(core
 
 set_target_properties(core PROPERTIES
     CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED YES 
+    CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO)
 
 target_enable_lto(core optimized)

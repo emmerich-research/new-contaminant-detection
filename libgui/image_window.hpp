@@ -5,6 +5,8 @@
 
 #include "window.hpp"
 
+#include "image_texture.hpp"
+
 NAMESPACE_BEGIN
 
 namespace gui {
@@ -31,23 +33,33 @@ class ImageWindow : public Window {
    */
   virtual void show() override;
   /**
+   *  After render contents
+   */
+  virtual void after_render() override;
+  /**
    * Process image frame
+   *
+   * @param image image to show
    */
-  void frame(const cv::Mat& image);
+  void frame(cv::Mat* image);
   /**
-   * Get frames (const)
+   * Get image texture (const)
+   *
+   * @return image texture (const)
    */
-  inline const cv::Mat& frame() const { return frame_; }
+  inline const ImageTexture& texture() const { return texture_; }
   /**
-   * Get frames
+   * Get image texture
+   *
+   * @return image texture
    */
-  inline cv::Mat& frame() { return frame_; }
+  inline ImageTexture& texture() { return texture_; }
 
  private:
   /**
-   * Frame container
+   * Image texture from OpenCV
    */
-  cv::Mat frame_;
+  ImageTexture texture_;
 };
 }  // namespace gui
 

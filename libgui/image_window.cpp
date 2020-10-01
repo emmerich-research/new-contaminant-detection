@@ -4,7 +4,6 @@
 #include <iterator>
 #include <vector>
 
-#include "image_texture.hpp"
 #include "image_window.hpp"
 
 NAMESPACE_BEGIN
@@ -18,14 +17,16 @@ ImageWindow::ImageWindow(const char*             name,
 
 ImageWindow::~ImageWindow() {}
 
-void ImageWindow::frame(const cv::Mat& image) {
-  frame_ = image;
+void ImageWindow::frame(cv::Mat* image) {
+  texture().image(image);
 }
 
 void ImageWindow::show() {
-  ImageTexture texture{frame()};
+  ImGui::Image(texture().texture(), texture().size());
+}
 
-  ImGui::Image(texture.texture(), texture.size());
+void ImageWindow::after_render() {
+  texture().destroy();
 }
 }  // namespace gui
 

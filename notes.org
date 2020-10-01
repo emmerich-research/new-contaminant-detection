@@ -1,0 +1,14 @@
+#+TITLE: Project Notes
+
+* TODOs
+** Modbus [0/3]
+*** TODO modbus lib -> as server (slave)
+*** TODO heartbeat
+*** TODO data table mapping to "real values" -> look at google sheet
+*** TODO refactor listener -> using signal-slot and event loop of boost asio
+** Cloud [0/1]
+*** TODO terraform GCP deployment [0/2]
+**** TODO cloud storage
+**** TODO cloud sql -> postgres?
+*** TODO sql schema
+*** TODO upload image

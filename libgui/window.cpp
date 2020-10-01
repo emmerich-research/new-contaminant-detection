@@ -16,7 +16,7 @@ Window::Window(const char*             name,
 Window::~Window() {}
 
 void Window::render() {
-  if (!ImGui::Begin(name(), NULL, flags())) {
+  if (!ImGui::Begin(name(), nullptr, flags())) {
     ImGui::End();
     return;
   }
@@ -25,6 +25,8 @@ void Window::render() {
 
   ImGui::End();
 }
+
+void Window::after_render() {}
 }  // namespace gui
 
 NAMESPACE_END

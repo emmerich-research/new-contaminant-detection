@@ -10,11 +10,13 @@
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
+#include <map>
+#include <memory>
 #include <string>
 #include <type_traits>
-#include <vector>
+#include <utility>
 
-#include <external/imgui/imgui.h>
+#include <imgui.h>
 
 #include <libcore/core.hpp>
 
@@ -29,9 +31,11 @@ class Window;
 
 class Manager : public StackObj {
  public:
-  typedef GLFWwindow   MainWindow;
-  typedef GLFWerrorfun ErrorCallback;
-  typedef GLFWkeyfun   KeyCallback;
+  typedef GLFWwindow                       MainWindow;
+  typedef GLFWerrorfun                     ErrorCallback;
+  typedef GLFWkeyfun                       KeyCallback;
+  typedef std::unique_ptr<Window>          WindowPtr;
+  typedef std::map<std::string, WindowPtr> WindowContainer;
   /**
    * Manager constructor
    *
@@ -46,20 +50,23 @@ class Manager : public StackObj {
   /**
    * Add window to manager
    *
-   * @param window  window to be added
-   */
-  void add_window(Window* window);
-  /**
-   * Add window to manager
-   *
    * @param args arguments to pass
    */
   template <typename T,
             typename... Args,
             typename = std::enable_if_t<std::is_base_of_v<Window, T>>>
-  inline void add_window(Args&&... args) {
-    windows().push_back(new T(std::forward<Args>(args)...));
+  inline void add(const std::string& key, Args&&... args) {
+    windows().insert(
+        std::make_pair(key, std::make_unique<T>(std::forward<Args>(args)...)));
   }
+  /**
+   * Get window with specified key
+   *
+   * @param key window key
+   *
+   * @return window pointer with specified key
+   */
+  Window* get(const std::string& key);
   /**
    * Init GLFW, OpenGL, and other initializations
    *
@@ -123,13 +130,13 @@ class Manager : public StackObj {
    *
    * @return windows container
    */
-  inline std::vector<Window*>& windows() { return windows_; }
+  inline WindowContainer& windows() { return windows_; }
   /**
    * Get windows container (const)
    *
    * @return windows container (const)
    */
-  inline const std::vector<Window*>& windows() const { return windows_; }
+  inline const WindowContainer& windows() const { return windows_; }
   /**
    * Get main window pointer
    *
@@ -169,7 +176,7 @@ class Manager : public StackObj {
   /**
    * Windows container
    */
-  std::vector<Window*> windows_;
+  WindowContainer windows_;
   /**
    * Main window
    */

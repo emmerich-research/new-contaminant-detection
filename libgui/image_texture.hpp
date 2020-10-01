@@ -12,7 +12,7 @@
 
 #include <opencv4/opencv2/opencv.hpp>
 
-#include <external/imgui/imgui.h>
+#include <imgui.h>
 
 #include <libcore/core.hpp>
 
@@ -21,6 +21,9 @@ NAMESPACE_BEGIN
 namespace gui {
 /**
  * @brief OpenCV Frame Texture bridge for ImGUI
+ *
+ * Should be use like RAII (Resource Acquisition Is Initialization) if possible
+ * See https://en.cppreference.com/w/cpp/language/raii
  *
  * Credits to :
  * https://github.com/ocornut/imgui/wiki/Image-Loading-and-Displaying-Examples#Example-for-OpenGL-users
@@ -37,8 +40,10 @@ class ImageTexture {
   ImageTexture();
   /**
    * ImageTexture constructor
+   *
+   * @param frame frame to process
    */
-  ImageTexture(const cv::Mat& frame);
+  ImageTexture(const cv::Mat* frame);
   /**
    * ImageTexture destructor
    */
@@ -46,15 +51,13 @@ class ImageTexture {
   /**
    * Set texture from cv::Mat
    *
-   * @param frame  frame to process (cv::Mat (BGR))
+   * @param frame pointer to image frame to process (cv::Mat (BGR))
    */
-  void image(const cv::Mat& frame);
+  void image(const cv::Mat* frame);
   /**
-   * Set texture from filename
-   *
-   * @param filename  file to process
+   * Destroy image texture
    */
-  void image(const std::string& filename);
+  void destroy();
   /**
    * Get texture
    *
@@ -80,7 +83,7 @@ class ImageTexture {
    */
   float height_;
   /**
-   * OpenGL texturee
+   * OpenGL texture
    */
   GLuint opengl_texture_;
 };

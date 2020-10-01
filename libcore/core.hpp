@@ -19,17 +19,20 @@
 #include <string>
 #include <thread>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
 // 2. Vendors
-// 2.1. Spdlog
-#include <spdlog/async.h>
+// 2.1 Fmt
+#include <fmt/core.h>
+#include <fmt/format.h>
 #ifdef NDEBUG
-#include <spdlog/fmt/bundled/ranges.h>
+#include <fmt/ranges.h>
 #endif
-#include <spdlog/fmt/fmt.h>
-#include <spdlog/fmt/ostr.h>
+
+// 2.2. Spdlog
+#include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
@@ -49,6 +52,7 @@
 #include "allocation.inline.hpp"
 
 #include "config.hpp"
+#include "listener.hpp"
 #include "logger.hpp"
 #include "state.hpp"
 
