@@ -84,6 +84,6 @@ if(Boost_FOUND
   add_subdirectory(libdetector)
   add_subdirectory(libgui)
   add_subdirectory(libstorage)
-  # add_subdirectory(driver)
+  add_subdirectory(driver)
   add_subdirectory(app)
 endif()

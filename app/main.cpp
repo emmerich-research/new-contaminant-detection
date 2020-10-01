@@ -31,11 +31,12 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     return ATM_ERR;
   }
 
-  server::Slave          slave(&server_config);
-  server::DataMapper     data_mapper{&server_config, &slave};
-  cv::Mat                frame, blob;
-  detector::BlobDetector blob_detector;
-  gui::Manager           ui_manager;
+  server::Slave      slave(&server_config);
+  server::DataMapper data_mapper{&server_config, &slave};
+  cv::Mat            frame;
+  cv::Mat            blob;
+  // detector::BlobDetector blob_detector;
+  gui::Manager ui_manager;
 
   // listeners
   storage::StorageListener storage_listener{&server_config, &data_mapper,
@@ -67,7 +68,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
   ui_manager.add<server::DataWindow>("data", &server_config, &data_mapper);
 
   auto* image_window = dynamic_cast<gui::ImageWindow*>(ui_manager.get("image"));
-  auto* blob_window = dynamic_cast<gui::ImageWindow*>(ui_manager.get("blob"));
+  // auto* blob_window =
+  // dynamic_cast<gui::ImageWindow*>(ui_manager.get("blob"));
 
   LOG_INFO("Running server...");
   slave.run();
@@ -82,8 +84,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
       // show
       image_window->frame(&frame);
 
-      blob_detector.detect(std::move(frame), std::move(blob));
-      blob_window->frame(&blob);
+      // blob_detector.detect(std::move(frame), std::move(blob));
+      // blob_window->frame(&blob);
 
       ui_manager.render();
     }
