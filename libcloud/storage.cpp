@@ -34,7 +34,10 @@ bool Storage::insert(const storage::schema::Hash& hash) {
 
   std::ifstream img(filename, std::ios::binary);
 
-  auto stream = client_->WriteObject(config_->storage_bucket(), obj_name);
+  auto stream = client_->WriteObject(
+      config_->storage_bucket(), obj_name, gcs::IfGenerationMatch(0),
+      gcs::WithObjectMetadata(
+          gcs::ObjectMetadata().set_content_type("image/jpeg")));
   stream << img.rdbuf();
   stream.Close();
 
