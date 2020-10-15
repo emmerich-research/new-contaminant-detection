@@ -10,6 +10,25 @@ debug                        = false # will log all debugging things
 database                     = "contaminants.db"
 directory                    = "images"
 
+[cloud]
+name                         = "mycoworks-ces-emrc-project"
+
+[cloud.database]
+host                         = "34.94.20.180"
+port                         = 5432
+name                         = "postgres"
+user                         = "dev"
+password                     = "02e3efe2dccc7043"
+
+[cloud.database.ssl]
+root-cert                    = "./cert/root-cert.pem"
+client-cert                  = "./cert/client-cert.pem"
+client-key                   = "./cert/client-key.pem"
+
+[cloud.storage]
+credential                   = "./cert/credential.json"
+bucket                       = "mycelium-images"
+
 [camera]
 index                        = 0
 

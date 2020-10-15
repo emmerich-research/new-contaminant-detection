@@ -81,6 +81,18 @@ class ConfigImpl : public StackObj {
    */
   std::string images_db() const;
   /**
+   * Find key in the TOML config
+   *
+   * @tparam T     type of config value
+   * @tparam Keys  variadic args for keys (should be string)
+   *
+   * @return config value with type T
+   */
+  template <typename T, typename... Keys>
+  inline T find(Keys&&... keys) const {
+    return toml::find<T>(config(), std::forward<Keys>(keys)...);
+  }
+  /**
    * Get TOML Config
    *
    * @return config tree
@@ -103,18 +115,6 @@ class ConfigImpl : public StackObj {
    *
    */
   ~ConfigImpl() = default;
-  /**
-   * Find key in the TOML config
-   *
-   * @tparam T     type of config value
-   * @tparam Keys  variadic args for keys (should be string)
-   *
-   * @return config value with type T
-   */
-  template <typename T, typename... Keys>
-  inline T find(Keys&&... keys) const {
-    return toml::find<T>(config(), std::forward<Keys>(keys)...);
-  }
 
  private:
   /**
