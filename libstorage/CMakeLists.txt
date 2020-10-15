@@ -1,6 +1,6 @@
 project(storage)
 
-ucm_add_files("internal-database.cpp" "listener.cpp" TO SOURCES)
+ucm_add_files("database.cpp" "listener.cpp" TO SOURCES)
 
 ucm_add_target(
   NAME

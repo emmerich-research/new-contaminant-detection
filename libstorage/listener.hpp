@@ -1,11 +1,7 @@
 #ifndef LIB_STORAGE_LISTENER_HPP_
 #define LIB_STORAGE_LISTENER_HPP_
 
-#include <boost/uuid/random_generator.hpp>
-
 #include <libcore/core.hpp>
-
-#include "internal-database.hpp"
 
 // forward declarations
 namespace cv {
@@ -20,10 +16,13 @@ class DataMapper;
 }  // namespace server
 
 namespace storage {
+class Database;
+
 class StorageListener : public Listener {
  public:
   StorageListener(const server::Config* config,
                   server::DataMapper*   data_mapper,
+                  Database*             database,
                   const cv::Mat*        image,
                   bool                  autorun = false);
   virtual ~StorageListener() override;
@@ -33,9 +32,6 @@ class StorageListener : public Listener {
 
  private:
   void execute();
-
-  inline const Database& database() const { return database_; }
-  inline Database&       database() { return database_; }
 
   inline const cv::Mat* image() const { return image_; }
 
@@ -48,9 +44,8 @@ class StorageListener : public Listener {
  private:
   const server::Config*           config_;
   server::DataMapper*             data_mapper_;
-  Database                        database_;
+  Database*                       database_;
   const cv::Mat*                  image_;
-  boost::uuids::random_generator  generator;
 };
 }  // namespace storage
 

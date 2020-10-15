@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <string>
 
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <sqlite_orm/sqlite_orm.h>
 
 #include <libcore/core.hpp>
@@ -12,25 +14,38 @@ NAMESPACE_BEGIN
 
 namespace storage {
 namespace schema {
-using PrimaryKey = int;
 using Hash = std::string;
 
 struct Image {
-  PrimaryKey id;
-  Hash       hash;
-  long long  year;
-  long long  month;
-  long long  day;
-  long long  hour;
-  long long  minute;
-  long long  second;
-  long long  sku_card;
-  long long  sku_number;
-  long long  sku_prod_day;
-  long long  tray_barcode;
-  long long  lid_barcode;
-  long long  batch_id;
-  long long  infection_id;
+  int         id;
+  Hash        hash;
+  long long   year;
+  long long   month;
+  long long   day;
+  long long   hour;
+  long long   minute;
+  long long   second;
+  std::string sku_card;
+  std::string sku_number;
+  long long   sku_prod_day;
+  long long   tray_barcode;
+  std::string lid_barcode;
+  long long   batch_id;
+  std::string infection_id;
+
+  template <typename T>
+  friend T& operator<<(T& os, const Image& img) {
+    fmt::print(
+        os,
+        "[Image, id={}, hash='{}', year={}, month={}, day={}, hour={}, "
+        "minute={}, "
+        "second={}, sku_card='{}', sku_number='{}', sku_prod_day={}, "
+        "tray_barcode={}, lid_barcode='{}', batch_id={}, infection_id='{}']",
+        img.id, img.hash, img.year, img.month, img.day, img.hour, img.minute,
+        img.second, img.sku_card, img.sku_number, img.sku_prod_day,
+        img.tray_barcode, img.lid_barcode, img.batch_id, img.infection_id);
+    return os;
+  }
 };
 }  // namespace schema
 
@@ -42,8 +57,11 @@ using Storage = sqlite_orm::internal::storage_t<sqlite_orm::internal::table_t<
     schema::Image,
     Column<schema::Image,
            decltype(schema::Image::id),
+           sqlite_orm::constraints::autoincrement_t,
            sqlite_orm::constraints::primary_key_t<>>,
-    Column<schema::Image, decltype(schema::Image::hash)>,
+    Column<schema::Image,
+           decltype(schema::Image::hash),
+           sqlite_orm::constraints::unique_t>,
     Column<schema::Image, decltype(schema::Image::year)>,
     Column<schema::Image, decltype(schema::Image::month)>,
     Column<schema::Image, decltype(schema::Image::day)>,
