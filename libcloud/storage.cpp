@@ -6,8 +6,6 @@
 
 #include <fstream>
 
-// #include "google/cloud/storage/parallel_upload.h"
-
 #include "config.hpp"
 
 NAMESPACE_BEGIN
