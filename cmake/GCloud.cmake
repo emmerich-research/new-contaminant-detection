@@ -6,7 +6,7 @@ endif()
 find_package(storage_client REQUIRED)
 find_package(google_cloud_cpp_grpc_utils REQUIRED)
 
-set(GCLOUD_LIBS "storage_client" "google_cloud_cpp_common")
+set(GCLOUD_LIBS "storage_client" "google_cloud_cpp_common" ${c-ares_SHARED_LIBRARY})
 
 # include(${CMAKE_CURRENT_LIST_DIR}/Abseil.cmake)
 
