@@ -45,6 +45,13 @@ class Storage {
   bool remove(const storage::schema::Hash& hash);
 
   /**
+   * Update metadata
+   *
+   * @param hash image hash
+   */
+  void update_metadata(const storage::schema::Hash& hash);
+
+  /**
    * Storage active status
    *
    * @return active status

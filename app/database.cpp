@@ -39,8 +39,11 @@ int main([[maybe_unused]] int argc, char* argv[]) {
     conn->execute("DROP TYPE SKU_CARD_T");
     conn->execute("DROP TYPE SKU_NUMBER_T");
     conn->execute("DROP TYPE INFECTION_T");
+    // conn->execute("SET timezone = 'Asia/Jakarta'");
     LOG_INFO("Successfully delete `images` table");
   } else if (strcmp(argv[1], "create") == 0) {
+    // conn->execute("SET timezone = 'US/Pacific'");
+
     conn->execute(
         "CREATE TYPE SKU_CARD_T AS ENUM ("
         "'Colonize', "
@@ -87,12 +90,15 @@ int main([[maybe_unused]] int argc, char* argv[]) {
         "TRAY_BARCODE INTEGER NOT NULL, "
         "LID_BARCODE TEXT NOT NULL, "
         "BATCH_ID INTEGER NOT NULL, "
-        "INFECTION INFECTION_T NOT NULL"
+        "INFECTION INFECTION_T NOT NULL, "
+        "TAKEN_AT TIMESTAMP NOT NULL"
         ");");
 
     conn->execute("CREATE UNIQUE INDEX HASH_IDX ON images (HASH)");
     conn->execute(
         "CREATE UNIQUE INDEX HASH_LOWER_IDX ON images ((lower(HASH)))");
+    conn->execute(
+        "CREATE INDEX TAKEN_AT_IDX ON images ((TAKEN_AT::TIMESTAMP));");
 
     cloud_db->prepare_statements();
     // cloud_db->insert({-1, "TRAY_123", 2020, 10, 13, 0, 0, 0, "Colonize",

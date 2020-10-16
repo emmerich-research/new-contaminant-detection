@@ -40,6 +40,8 @@ int main([[maybe_unused]] int argc, char* argv[]) {
     cloud_storage.insert(argv[2]);
   } else if (strcmp(argv[1], "upload") == 0) {
     cloud_storage.insert(argv[2]);
+  } else if (strcmp(argv[1], "metadata") == 0) {
+    cloud_storage.update_metadata(argv[2]);
   } else {
     LOG_INFO("Parameter should be only remove or upload");
   }

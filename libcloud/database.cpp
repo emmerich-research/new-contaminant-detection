@@ -46,8 +46,9 @@ void Database::prepare_statements() {
         "insert",
         "INSERT INTO images(hash, year, month, day, hour, minute, second, "
         "sku_card, sku_number, sku_prod_day, tray_barcode, lid_barcode, "
-        "batch_id, infection) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, "
-        "$9, $10, $11, $12, $13, $14 )");
+        "batch_id, infection, taken_at) VALUES ( $1, $2, $3, $4, $5, $6, $7, "
+        "$8, "
+        "$9, $10, $11, $12, $13, $14, $15 )");
     connection_->prepare("remove", "DELETE FROM images WHERE HASH=$1");
     connection_->prepare("exist",
                          "SELECT EXISTS( SELECT 1 FROM IMAGES WHERE HASH=$1) ");
@@ -124,10 +125,13 @@ storage::schema::Image Database::get(const storage::schema::Hash& hash) {
 
 void Database::insert(const storage::schema::Image& image) {
   const auto tr = connection_->transaction();
+  const auto taken_at =
+      fmt::format("{}-{}-{} {}:{}:{}-00", image.year, image.month, image.day,
+                  image.hour, image.minute, image.second);
   tr->execute("insert", image.hash, image.year, image.month, image.day,
               image.hour, image.minute, image.second, image.sku_card,
               image.sku_number, image.sku_prod_day, image.tray_barcode,
-              image.lid_barcode, image.batch_id, image.infection_id);
+              image.lid_barcode, image.batch_id, image.infection_id, taken_at);
   tr->commit();
 }
 

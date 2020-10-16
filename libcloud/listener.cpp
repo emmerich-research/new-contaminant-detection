@@ -78,10 +78,29 @@ void CloudListener::execute() {
         try {
           cloud_db_->insert(img);
           internal_db_->remove(img.hash);
+          storage_->update_metadata(img.hash);
         } catch (...) {
           storage_->remove(img.hash);
         }
       }
+
+      // int  retry = 0;
+      // while (!storage_->insert(img.hash) && retry < 10) {
+      //   retry++;
+      //   sleep_for<time_units::millis>(250);
+      // }
+
+      // retry = 0;
+
+      // try {
+      //   cloud_db_->insert(img);
+      //   internal_db_->remove(img.hash);
+      // } catch (...) {
+      //   while (!storage_->remove(img.hash) && retry < 10) {
+      //     retry++;
+      //     sleep_for<time_units::millis>(250);
+      //   }
+      // }
     }
   }
 }
