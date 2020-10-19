@@ -96,7 +96,7 @@ class Database {
    *
    * @return active
    */
-  inline virtual bool active() const { return true; }
+  inline virtual bool active() { return true; }
 };
 
 class InternalDatabase : public Database {

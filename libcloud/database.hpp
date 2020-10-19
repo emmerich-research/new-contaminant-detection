@@ -85,7 +85,7 @@ class Database : public storage::Database {
    *
    * @return health check
    */
-  inline virtual bool active() const override;
+  inline virtual bool active() override;
 
   /**
    * Prepare statements
@@ -101,13 +101,23 @@ class Database : public storage::Database {
 
  private:
   /**
+   * Connect to database
+   */
+  void connect();
+
+ private:
+  /**
+   * Connection active
+   */
+  bool active_;
+  /**
    * Cloud config
    */
   const Config* config_;
   /**
    * Connection
    */
-  const std::shared_ptr<tao::pq::connection> connection_;
+  std::shared_ptr<tao::pq::connection> connection_;
 };
 }  // namespace cloud
 
