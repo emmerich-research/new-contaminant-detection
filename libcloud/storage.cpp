@@ -65,7 +65,7 @@ bool Storage::remove(const storage::schema::Hash& hash) {
               config_->storage_bucket());
     return true;
   } else {
-    LOG_ERROR("DeleteFile Error: {}", status.message());
+    LOG_DEBUG("DeleteFile Error: {}", status.message());
     return false;
   }
 }

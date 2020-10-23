@@ -62,6 +62,8 @@ static std::string lid_barcode(long long lid_barcode_id) {
 
   if (lid_type_num.compare("000") == 0) {
     lid_type = "NO_LID";
+  } else if (lid_type_num.compare("100") == 0) {
+    lid_type = "CL:NH";
   } else if (lid_type_num.compare("101") == 0) {
     lid_type = "CL:HP1";
   } else if (lid_type_num.compare("102") == 0) {
@@ -74,8 +76,6 @@ static std::string lid_barcode(long long lid_barcode_id) {
     lid_type = "GL:HP2";
   } else if (lid_type_num.compare("203") == 0) {
     lid_type = "GL:HP3";
-  } else if (lid_type_num.compare("999") == 0) {
-    lid_type = "UNKNOWN";
   }
 
   return fmt::format("{}-{}", lid_type, lid_id);
