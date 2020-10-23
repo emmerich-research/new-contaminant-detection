@@ -74,6 +74,9 @@ void CloudListener::execute() {
 
       LOG_DEBUG("Getting {}", img);
 
+      // always delete if image exists in storage
+      storage_->remove(img.hash);
+
       if (storage_->insert(img.hash)) {
         try {
           cloud_db_->insert(img);

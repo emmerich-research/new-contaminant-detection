@@ -18,7 +18,7 @@ static std::string sku_card_instruction(long long sku_card_instr) {
   if (sku_card_instr == 0) {
     return "Colonize";
   } else if (sku_card_instr == 1) {
-    return "TEND";
+    return "Tend";
   } else if (sku_card_instr == 2) {
     return "ExposeFlip";
   } else if (sku_card_instr == 3) {
@@ -30,21 +30,21 @@ static std::string sku_card_instruction(long long sku_card_instr) {
   } else if (sku_card_instr == 8) {
     return "HarvestBed";
   } else {
-    return "NOT_USED";
+    return "Unknown";
   }
 }
 
 static std::string sku_number(long long sku_num) {
-  if (sku_num == 0) {
-    return "REGEN";
+  if (sku_num == 99) {
+    return "Regen";
   } else if (sku_num == 1) {
-    return "ESKIMO";
+    return "Eskimo";
   } else if (sku_num == 2) {
-    return "TIGER";
+    return "Tiger";
   } else if (sku_num == 3) {
-    return "SAPIEN";
+    return "Sapien";
   } else {
-    return "NOT_USED";
+    return "Unknown";
   }
 }
 
@@ -75,7 +75,7 @@ static std::string lid_barcode(long long lid_barcode_id) {
   } else if (lid_type_num.compare("203") == 0) {
     lid_type = "GL:HP3";
   } else if (lid_type_num.compare("999") == 0) {
-    lid_type = "NO_HOLES";
+    lid_type = "UNKNOWN";
   }
 
   return fmt::format("{}-{}", lid_type, lid_id);
@@ -83,15 +83,15 @@ static std::string lid_barcode(long long lid_barcode_id) {
 
 static std::string infection(long long infection_num) {
   if (infection_num == 0) {
-    return "NONE";
+    return "None";
   } else if (infection_num == 1) {
-    return "BLUE/GREEN";
+    return "Blue/Green";
   } else if (infection_num == 2) {
-    return "BLACK/BROWN";
+    return "Black/Brown";
   } else if (infection_num == 3) {
-    return "METABOLITE";
+    return "Metabolite";
   } else {
-    return "NOT_USED";
+    return "Unknown";
   }
 }
 StorageListener::StorageListener(const server::Config* config,

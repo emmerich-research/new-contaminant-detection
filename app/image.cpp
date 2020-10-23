@@ -37,7 +37,7 @@ int main([[maybe_unused]] int argc, char* argv[]) {
   }
 
   if (strcmp(argv[1], "remove") == 0) {
-    cloud_storage.insert(argv[2]);
+    cloud_storage.remove(argv[2]);
   } else if (strcmp(argv[1], "upload") == 0) {
     cloud_storage.insert(argv[2]);
   } else if (strcmp(argv[1], "metadata") == 0) {

@@ -47,31 +47,31 @@ int main([[maybe_unused]] int argc, char* argv[]) {
     conn->execute(
         "CREATE TYPE SKU_CARD_T AS ENUM ("
         "'Colonize', "
-        "'TEND', "
+        "'Tend', "
         "'ExposeFlip', "
         "'FlipNylonFlip', "
         "'TendFlipFlipCompFlip', "
         "'FlipTend', "
         "'HarvestBed', "
-        "'NOT_USED'"
+        "'Unknown'"
         ");");
 
     conn->execute(
         "CREATE TYPE SKU_NUMBER_T AS ENUM ("
-        "'REGEN', "
-        "'ESKIMO', "
-        "'TIGER', "
-        "'SAPIEN', "
-        "'NOT_USED'"
+        "'Regen', "
+        "'Eskimo', "
+        "'Tiger', "
+        "'Sapien', "
+        "'Unknown'"
         ");");
 
     conn->execute(
         "CREATE TYPE INFECTION_T AS ENUM ("
-        "'NONE', "
-        "'BLUE/GREEN', "
-        "'BLACK/BROWN', "
-        "'METABOLITE', "
-        "'NOT_USED'"
+        "'None', "
+        "'Blue/Green', "
+        "'Black/Brown', "
+        "'Metabolite', "
+        "'Unknown'"
         ");");
 
     conn->execute(
@@ -100,9 +100,9 @@ int main([[maybe_unused]] int argc, char* argv[]) {
     conn->execute(
         "CREATE INDEX TAKEN_AT_IDX ON images ((TAKEN_AT::TIMESTAMP));");
 
-    cloud_db->prepare_statements();
+    // cloud_db->prepare_statements();
     // cloud_db->insert({-1, "TRAY_123", 2020, 10, 13, 0, 0, 0, "Colonize",
-    //                   "REGEN", 1, 123123, "NO_LID:12345", 2, "METABOLITE"});
+    //                   "Regen", 1, 123123, "NO_LID:12345", 2, "Metabolite"});
     // auto img = cloud_db->get("TRAY_123");
     // LOG_INFO("{}", img);
     LOG_INFO("Successfully create `images` table");
