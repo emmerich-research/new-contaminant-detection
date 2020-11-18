@@ -1,6 +1,6 @@
 project(app)
 
-set(SOURCES "app.cpp" "database.cpp" "image.cpp")
+set(SOURCES "app.cpp" "database.cpp" "image.cpp" "cli.cpp")
 
 foreach(app_src ${SOURCES})
   get_filename_component(app_src_file ${app_src} NAME)
