@@ -82,6 +82,8 @@ void CloudListener::execute() {
           cloud_db_->insert(img);
           internal_db_->remove(img.hash);
           storage_->update_metadata(img.hash);
+          fs::remove(fmt::format(
+              "{}/{}.jpg", config_->base_config()->images_dir(), img.hash));
         } catch (...) {
           storage_->remove(img.hash);
         }
